@@ -1,68 +1,74 @@
 plugins {
     id 'java-library'
-    id 'maven-publish'
+    id 'maven'
     id 'signing'
 }
 
 group = 'com.ragnaroh'
+archivesBaseName = 'assertj-json'
 version = '0.1.0-SNAPSHOT'
 
-java {
-    withJavadocJar()
-    withSourcesJar()
+task javadocJar(type: Jar) {
+    classifier = 'javadoc'
+    from javadoc
 }
 
-publishing {
-    publications {
-        mavenJava(MavenPublication) {
-            groupId = 'com.ragnaroh'
-            artifactId = 'assertj-json'
-            from components.java
-            versionMapping {
-                usage('java-api') {
-                    fromResolutionOf('runtimeClasspath')
-                }
-                usage('java-runtime') {
-                    fromResolutionResult()
-                }
+task sourcesJar(type: Jar) {
+    classifier = 'sources'
+    from sourceSets.main.allSource
+}
+
+artifacts {
+    archives javadocJar, sourcesJar
+}
+
+uploadArchives {
+    repositories {
+        mavenDeployer {
+            beforeDeployment { MavenDeployment deployment -> signing.signPom(deployment) }
+
+            repository(url: 'https://oss.sonatype.org/service/local/staging/deploy/maven2/') {
+                authentication(userName: ossrhUsername, password: ossrhPassword)
             }
-            pom {
-                name = 'AssertJ JSON'
-                description = 'Java library for asserting JSON using AssertJ'
-                url = 'https://github.com/ragnaroh/assertj-json'
+
+            snapshotRepository(url: 'https://oss.sonatype.org/content/repositories/snapshots/') {
+                authentication(userName: ossrhUsername, password: ossrhPassword)
+            }
+
+            pom.project {
+                name 'AssertJ JSON'
+                packaging 'jar'
+                artifactId 'assertj-json'
+                description 'Java library for asserting JSON using AssertJ and Gson' 
+                url 'https://github.com/ragnaroh/assertj-json'
+           
+                scm {
+                    connection 'scm:git:git://github.com/ragnaroh/assertj-json.git'
+                    developerConnection 'scm:git:ssh://github.com/ragnaroh/assertj-json.git'
+                    url 'https://github.com/ragnaroh/assertj-json'
+                }
+           
                 licenses {
                     license {
-                        name = 'The Apache License, Version 2.0'
-                        url = 'http://www.apache.org/licenses/LICENSE-2.0.txt'
+                        name 'The Apache License, Version 2.0'
+                        url 'http://www.apache.org/licenses/LICENSE-2.0.txt'
                     }
                 }
+           
                 developers {
                     developer {
-                        id = 'ragnaroh'
-                        name = 'Ragnar Haugan'
-                        email = 'ragnaroh@gmail.com'
+                        id 'ragnaroh'
+                        name 'Ragnar Haugan'
+                        email 'ragnaroh@gmail.com'
                     }
                 }
-                scm {
-                    connection = 'scm:git:git://github.com/ragnaroh/assertj-json.git'
-                    developerConnection = 'scm:git:ssh://github.com/ragnaroh/assertj-json.git'
-                    url = 'https://github.com/ragnaroh/assertj-json'
-                }
             }
-        }
-    }
-
-    repositories {
-        maven {
-            def releasesRepoUrl = "$buildDir/repos/releases"
-            def snapshotsRepoUrl = "$buildDir/repos/snapshot"
-            url = project.hasProperty('release') ? releasesRepoUrl : snapshotsRepoUrl
         }
     }
 }
 
 signing {
-    sign publishing.publications.mavenJava
+    sign configurations.archives
 }
 
 repositories {
