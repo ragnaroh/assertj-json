@@ -43,15 +43,6 @@ public abstract class AbstractJsonObjectAssert<SELF extends AbstractJsonObjectAs
       return myself;
    }
 
-   public SELF isEqualTo(String expected) {
-      requireNonNull(expected);
-      JsonObject expectedJson = new Gson().fromJson(expected, JsonObject.class);
-      if (!expectedJson.equals(actual)) {
-         failWithMessage("Expected <%s> to be equal to <%s>", actual, expected);
-      }
-      return myself;
-   }
-
    public SELF contains(String fieldName) {
       requireNonNull(fieldName);
       isNotNull();
@@ -170,8 +161,28 @@ public abstract class AbstractJsonObjectAssert<SELF extends AbstractJsonObjectAs
       return myself;
    }
 
+   public SELF contains(String fieldName, LocalDateTime expectedValue) {
+      requireNonNull(fieldName);
+      requireNonNull(expectedValue);
+      LocalDateTime actualValue = getLocalDateTime(fieldName);
+      if (!actualValue.equals(expectedValue)) {
+         failValueCompare(fieldName, expectedValue, actualValue);
+      }
+      return myself;
+   }
+
+   public SELF containsLocalDateTime(String fieldName, String expectedValue) {
+      requireNonNull(fieldName);
+      requireNonNull(expectedValue);
+      LocalDateTime actualValue = getLocalDateTime(fieldName);
+      if (!actualValue.equals(LocalDateTime.parse(expectedValue))) {
+         failValueCompare(fieldName, expectedValue, actualValue);
+      }
+      return myself;
+   }
+
    private void failValueCompare(String fieldName, Object expectedValue, Object actualValue) {
-      failWithMessage("Expected field \"%s\" to have the value <%s>, was <%s>", fieldName, expectedValue, actualValue);
+      failFieldWithMessage(fieldName, "Expected value <%s>, was: <%s>", expectedValue, actualValue);
    }
 
    public SELF containsStringSatisfying(String fieldName, Consumer<String> valueRequirements) {
@@ -228,7 +239,7 @@ public abstract class AbstractJsonObjectAssert<SELF extends AbstractJsonObjectAs
       requireNonNull(valueRegex);
       String actualValue = getString(fieldName);
       if (!actualValue.matches(valueRegex)) {
-         failWithMessage("Expected \"%s\" field to match regex <%s>, was <%s>", fieldName, valueRegex, actualValue);
+         failFieldWithMessage(fieldName, "Expected value matching regex <%s>, was: <%s>", valueRegex, actualValue);
       }
       return myself;
    }
@@ -238,16 +249,7 @@ public abstract class AbstractJsonObjectAssert<SELF extends AbstractJsonObjectAs
       requireNonNull(valueRegex);
       Number actualValue = getNumber(fieldName);
       if (!actualValue.toString().matches(valueRegex)) {
-         failWithMessage("Expected \"%s\" field to match regex <%s>, was <%s>", fieldName, valueRegex, actualValue);
-      }
-      return myself;
-   }
-
-   public SELF containsNullValue(String fieldName) {
-      requireNonNull(fieldName);
-      JsonElement actualValue = getJsonElement(fieldName);
-      if (!actualValue.isJsonNull()) {
-         failWithMessage("Expected \"%s\" field to be <null>, was <%s>", fieldName, actualValue);
+         failFieldWithMessage(fieldName, "Expected value matching regex <%s>, was: <%s>", valueRegex, actualValue);
       }
       return myself;
    }
@@ -256,7 +258,7 @@ public abstract class AbstractJsonObjectAssert<SELF extends AbstractJsonObjectAs
       requireNonNull(fieldName);
       JsonObject actualValue = getJsonObject(fieldName);
       if (actualValue.size() != 0) {
-         failWithMessage("Expected \"%s\" field to be an empty object, was: %s", fieldName, actualValue);
+         failFieldWithMessage(fieldName, "Expected empty object, was: <%s>", actualValue);
       }
       return myself;
    }
@@ -265,7 +267,7 @@ public abstract class AbstractJsonObjectAssert<SELF extends AbstractJsonObjectAs
       requireNonNull(fieldName);
       JsonArray actualValue = getJsonArray(fieldName);
       if (actualValue.size() != 0) {
-         failWithMessage("Expected \"%s\" field to be an empty array, was: %s", fieldName, actualValue);
+         failFieldWithMessage(fieldName, "Expected empty array, was: <%s>", actualValue);
       }
       return myself;
    }
@@ -275,10 +277,7 @@ public abstract class AbstractJsonObjectAssert<SELF extends AbstractJsonObjectAs
       requireNonNull(expectedValue);
       LocalDateTime actualValue = getLocalDateTime(fieldName);
       if (!actualValue.equals(expectedValue)) {
-         failWithMessage("Expected \"%s\" field to represent LocalDateTime <%s>, was <%s>",
-                         fieldName,
-                         expectedValue,
-                         actualValue);
+         failFieldWithMessage(fieldName, "Expected datetime %s, was: <%s>", expectedValue, actualValue);
       }
       return myself;
    }
@@ -309,9 +308,9 @@ public abstract class AbstractJsonObjectAssert<SELF extends AbstractJsonObjectAs
             return LocalDateTime.of(array[0], array[1], array[2], array[3], array[4], array[5], array[6]);
          }
       } catch (DateTimeException ex) {
-         failWithMessage("Field \"%s\" did not represent a valid datetime: %s", fieldName, jsonArray);
+         failFieldWithMessage(fieldName, "Invalid datetime array: <%s>", jsonArray);
       }
-      failWithMessage("Expected \"%s\" field size of LocalDateTime array to be 5, 6 or 7, was <%d>", array.length);
+      failFieldWithMessage(fieldName, "Expected integer array of size 5, 6 or 7, size was: <%d>", array.length);
       return null;
    }
 
@@ -351,10 +350,10 @@ public abstract class AbstractJsonObjectAssert<SELF extends AbstractJsonObjectAs
                                         int expectedSize) {
       T[] actualValue = getArray(fieldName, elementType, valueGetter);
       if (actualValue.length != expectedSize) {
-         failWithMessage("Expected \"%s\" field to be an array of size <%d>, was of size <%d>",
-                         fieldName,
-                         expectedSize,
-                         actualValue.length);
+         failFieldWithMessage(fieldName,
+                              "Expected array of size <%d>, size was <%d>",
+                              expectedSize,
+                              actualValue.length);
       }
       return myself;
    }
@@ -419,7 +418,7 @@ public abstract class AbstractJsonObjectAssert<SELF extends AbstractJsonObjectAs
       JsonArray jsonArray = getJsonArray(fieldName);
       T[] array = convertArray(jsonArray, elementType, valueGetter);
       if (array == null) {
-         failWithMessage("Unexpected type in array field \"%s\": %s", fieldName, jsonArray);
+         failFieldWithMessage(fieldName, "Unexpected type in array, was: <%s>", jsonArray);
       }
       return array;
    }
@@ -440,7 +439,7 @@ public abstract class AbstractJsonObjectAssert<SELF extends AbstractJsonObjectAs
       JsonElement jsonElement = getJsonElement(fieldName);
       String string = toString(jsonElement);
       if (string == null) {
-         failWithMessage("Expected field \"%s\" to be a string, was: %s", fieldName, jsonElement);
+         failFieldWithMessage(fieldName, "Expected string, was: <%s>", jsonElement);
       }
       return string;
    }
@@ -450,7 +449,7 @@ public abstract class AbstractJsonObjectAssert<SELF extends AbstractJsonObjectAs
       JsonElement jsonElement = getJsonElement(fieldName);
       Number value = toNumber(jsonElement);
       if (value == null) {
-         failWithMessage("Expected field \"%s\" to be a number, was: %s", fieldName, jsonElement);
+         failFieldWithMessage(fieldName, "Expected number, was: <%s>", jsonElement);
       }
       return value;
    }
@@ -460,7 +459,7 @@ public abstract class AbstractJsonObjectAssert<SELF extends AbstractJsonObjectAs
       JsonElement jsonElement = getJsonElement(fieldName);
       Number value = toIntegralNumber(jsonElement);
       if (value == null) {
-         failWithMessage("Expected field \"%s\" to be an integral number, was: %s", fieldName, jsonElement);
+         failFieldWithMessage(fieldName, "Expected integral number, was: <%s>", jsonElement);
       }
       return value;
    }
@@ -470,7 +469,7 @@ public abstract class AbstractJsonObjectAssert<SELF extends AbstractJsonObjectAs
       JsonElement jsonElement = getJsonElement(fieldName);
       Boolean value = toBoolean(jsonElement);
       if (value == null) {
-         failWithMessage("Expected field \"%s\" to be a boolean, was: %s", fieldName, jsonElement);
+         failFieldWithMessage(fieldName, "Expected boolean, was: <%s>", jsonElement);
       }
       return value;
    }
@@ -480,7 +479,7 @@ public abstract class AbstractJsonObjectAssert<SELF extends AbstractJsonObjectAs
       JsonElement jsonElement = getJsonElement(fieldName);
       JsonNull value = toJsonNull(jsonElement);
       if (value == null) {
-         failWithMessage("Expected field \"%s\" to be a boolean, was: %s", fieldName, jsonElement);
+         failFieldWithMessage(fieldName, "Expected <null>, was: <%s>", jsonElement);
       }
       return value;
    }
@@ -490,7 +489,7 @@ public abstract class AbstractJsonObjectAssert<SELF extends AbstractJsonObjectAs
       JsonElement jsonElement = getJsonElement(fieldName);
       JsonObject value = toJsonObject(jsonElement);
       if (value == null) {
-         failWithMessage("Expected field \"%s\" to be a JSON object, was: %s", fieldName, jsonElement);
+         failFieldWithMessage(fieldName, "Expected JSON object, was: <%s>", jsonElement);
       }
       return value;
    }
@@ -500,7 +499,7 @@ public abstract class AbstractJsonObjectAssert<SELF extends AbstractJsonObjectAs
       JsonElement jsonElement = getJsonElement(fieldName);
       JsonArray value = toJsonArray(jsonElement);
       if (value == null) {
-         failWithMessage("Expected field \"%s\" to be a JSON array, was: %s", fieldName, jsonElement);
+         failFieldWithMessage(fieldName, "Expected JSON array, was: <%s>", jsonElement);
       }
       return value;
    }
@@ -517,6 +516,10 @@ public abstract class AbstractJsonObjectAssert<SELF extends AbstractJsonObjectAs
 
    protected final void markAsAsserted(String fieldName) {
       assertedFields.add(fieldName);
+   }
+
+   private void failFieldWithMessage(String fieldName, String message, Object... arguments) {
+      failWithMessage("Field \"" + fieldName + "\": " + message, arguments);
    }
 
 }

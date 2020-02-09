@@ -1,6 +1,7 @@
 package com.ragnaroh.assertj.json;
 
 import com.google.gson.JsonArray;
+import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 
 public class Assertions extends org.assertj.core.api.Assertions {
@@ -15,6 +16,10 @@ public class Assertions extends org.assertj.core.api.Assertions {
 
    public static JsonArrayAssert assertThat(JsonArray actual) {
       return new JsonArrayAssert(actual);
+   }
+
+   public static JsonElementAssert assertThat(JsonElement actual) {
+      return new JsonElementAssert(actual);
    }
 
 }
