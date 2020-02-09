@@ -1,22 +1,34 @@
 package com.ragnaroh.assertj.json;
 
+import static java.util.Objects.requireNonNull;
+
 import java.lang.reflect.Array;
 import java.math.BigDecimal;
 import java.util.function.Function;
 
 import org.assertj.core.api.AbstractAssert;
 
+import com.google.gson.Gson;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonNull;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonPrimitive;
 
-public abstract class AbstractJsonAssert<SELF extends AbstractJsonAssert<SELF, ACTUAL>, ACTUAL>
+public abstract class AbstractJsonAssert<SELF extends AbstractJsonAssert<SELF, ACTUAL>, ACTUAL extends JsonElement>
       extends AbstractAssert<SELF, ACTUAL> {
 
    protected AbstractJsonAssert(ACTUAL actual, Class<SELF> selfType) {
       super(actual, selfType);
+   }
+
+   public SELF isEqualTo(String expected) {
+      requireNonNull(expected);
+      JsonElement expectedJson = new Gson().fromJson(expected, JsonElement.class);
+      if (!expectedJson.equals(actual)) {
+         failWithMessage("Expected <%s> to be equal to <%s>", actual, expected);
+      }
+      return myself;
    }
 
    static int[] unbox(Integer[] array) {
