@@ -6,8 +6,8 @@ import com.google.gson.JsonObject;
 
 public class Assertions extends org.assertj.core.api.Assertions {
 
-   public static JsonAssert assertThatJson(String actual) {
-      return new JsonAssert(actual);
+   public static JsonElementAssert assertThatJson(String actual) {
+      return new JsonElementAssert(actual);
    }
 
    public static JsonObjectAssert assertThat(JsonObject actual) {
