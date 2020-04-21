@@ -37,7 +37,7 @@ class JsonObjectAssertTest {
             """;
       Assertions
             .assertThatJson(json)
-            .asObject()
+            .asJsonObject()
             .contains("string", "string")
             .contains("intNumber", 1)
             .contains("intNumber", 1.0)
