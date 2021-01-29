@@ -87,11 +87,9 @@ compileJava {
 }
 
 compileTestJava {
-    sourceCompatibility = 13
-    options.compilerArgs.add('--enable-preview')
+    sourceCompatibility = 15
 }
 
 test {
     useJUnitPlatform()
-    jvmArgs(['--enable-preview'])
 }
