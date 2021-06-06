@@ -10,24 +10,26 @@ import org.assertj.core.api.DoubleAssert;
 import org.assertj.core.api.IntegerAssert;
 import org.assertj.core.api.StringAssert;
 
-import com.google.gson.Gson;
-import com.google.gson.JsonArray;
-import com.google.gson.JsonElement;
-import com.google.gson.JsonObject;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.node.ArrayNode;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 
 public abstract class AbstractJsonElementAssert<SELF extends AbstractJsonElementAssert<SELF>>
-      extends AbstractJsonAssert<SELF, JsonElement> {
+      extends AbstractJsonAssert<SELF, JsonNode> {
 
-   protected AbstractJsonElementAssert(String actual, Class<SELF> selfType) {
-      super(toJsonElement(actual), selfType);
+   protected AbstractJsonElementAssert(String actual, Class<SELF> selfType, ObjectMapper mapper)
+         throws JsonProcessingException {
+      super(toJsonElement(actual, mapper), selfType);
    }
 
-   protected AbstractJsonElementAssert(JsonElement actual, Class<SELF> selfType) {
+   protected AbstractJsonElementAssert(JsonNode actual, Class<SELF> selfType) {
       super(actual, selfType);
    }
 
-   private static JsonElement toJsonElement(String json) {
-      return new Gson().fromJson(json, JsonElement.class);
+   private static JsonNode toJsonElement(String json, ObjectMapper mapper) throws JsonProcessingException {
+      return mapper.readValue(json, JsonNode.class);
    }
 
    public SELF isAString() {
@@ -77,7 +79,7 @@ public abstract class AbstractJsonElementAssert<SELF extends AbstractJsonElement
 
    public SELF isAJsonObject() {
       isNotNull();
-      JsonObject jsonObject = toJsonObject(actual);
+      ObjectNode jsonObject = toJsonObject(actual);
       if (jsonObject == null) {
          failWithMessage("Expected JSON element to be an object, was <%s>", actual);
       }
@@ -86,7 +88,7 @@ public abstract class AbstractJsonElementAssert<SELF extends AbstractJsonElement
 
    public SELF isAJsonArray() {
       isNotNull();
-      JsonArray jsonArray = toJsonArray(actual);
+      ArrayNode jsonArray = toJsonArray(actual);
       if (jsonArray == null) {
          failWithMessage("Expected JSON element to be an array, was <%s>", actual);
       }
@@ -208,7 +210,7 @@ public abstract class AbstractJsonElementAssert<SELF extends AbstractJsonElement
 
    public JsonObjectAssert asJsonObject() {
       isNotNull();
-      JsonObject jsonObject = toJsonObject(actual);
+      ObjectNode jsonObject = toJsonObject(actual);
       if (jsonObject == null) {
          failWithMessage("Expected JSON element to be an object, was <%s>", actual);
       }
@@ -217,7 +219,7 @@ public abstract class AbstractJsonElementAssert<SELF extends AbstractJsonElement
 
    public JsonArrayAssert asJsonArray() {
       isNotNull();
-      JsonArray jsonArray = toJsonArray(actual);
+      ArrayNode jsonArray = toJsonArray(actual);
       if (jsonArray == null) {
          failWithMessage("Expected JSON element to be an array, was <%s>", actual);
       }

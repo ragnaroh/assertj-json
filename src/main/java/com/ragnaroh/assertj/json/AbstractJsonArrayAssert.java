@@ -11,24 +11,26 @@ import org.assertj.core.api.DoubleArrayAssert;
 import org.assertj.core.api.IntArrayAssert;
 import org.assertj.core.api.ObjectArrayAssert;
 
-import com.google.gson.Gson;
-import com.google.gson.JsonArray;
-import com.google.gson.JsonElement;
-import com.google.gson.JsonObject;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.node.ArrayNode;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 
 public abstract class AbstractJsonArrayAssert<SELF extends AbstractJsonArrayAssert<SELF>>
-      extends AbstractJsonAssert<SELF, JsonArray> {
+      extends AbstractJsonAssert<SELF, ArrayNode> {
 
-   protected AbstractJsonArrayAssert(String actual, Class<SELF> selfType) {
-      this(toJsonArray(actual), selfType);
+   protected AbstractJsonArrayAssert(String actual, Class<SELF> selfType, ObjectMapper mapper)
+         throws JsonProcessingException {
+      this(toJsonArray(actual, mapper), selfType);
    }
 
-   protected AbstractJsonArrayAssert(JsonArray actual, Class<SELF> selfType) {
+   protected AbstractJsonArrayAssert(ArrayNode actual, Class<SELF> selfType) {
       super(actual, selfType);
    }
 
-   private static JsonArray toJsonArray(String json) {
-      return new Gson().fromJson(json, JsonArray.class);
+   private static ArrayNode toJsonArray(String json, ObjectMapper mapper) throws JsonProcessingException {
+      return mapper.readValue(json, ArrayNode.class);
    }
 
    public SELF isEmpty() {
@@ -62,12 +64,12 @@ public abstract class AbstractJsonArrayAssert<SELF extends AbstractJsonArrayAsse
       return myself;
    }
 
-   public SELF containsJsonObjectsSatisfying(Consumer<JsonObject> requirements) {
+   public SELF containsJsonObjectsSatisfying(Consumer<ObjectNode> requirements) {
       asJsonObjectArray().allSatisfy(requirements);
       return myself;
    }
 
-   public SELF containsJsonArraysSatisfying(Consumer<JsonArray> requirements) {
+   public SELF containsJsonArraysSatisfying(Consumer<ArrayNode> requirements) {
       asJsonArrayArray().allSatisfy(requirements);
       return myself;
    }
@@ -108,15 +110,15 @@ public abstract class AbstractJsonArrayAssert<SELF extends AbstractJsonArrayAsse
       return new BooleanArrayAssert(unbox(array));
    }
 
-   public ObjectArrayAssert<JsonObject> asJsonObjectArray() {
-      return asObjectArray(JsonObject.class, AbstractJsonAssert::toJsonObject);
+   public ObjectArrayAssert<ObjectNode> asJsonObjectArray() {
+      return asObjectArray(ObjectNode.class, AbstractJsonAssert::toJsonObject);
    }
 
-   public ObjectArrayAssert<JsonArray> asJsonArrayArray() {
-      return asObjectArray(JsonArray.class, AbstractJsonAssert::toJsonArray);
+   public ObjectArrayAssert<ArrayNode> asJsonArrayArray() {
+      return asObjectArray(ArrayNode.class, AbstractJsonAssert::toJsonArray);
    }
 
-   private <T> ObjectArrayAssert<T> asObjectArray(Class<T> elementType, Function<JsonElement, T> valueMapper) {
+   private <T> ObjectArrayAssert<T> asObjectArray(Class<T> elementType, Function<JsonNode, T> valueMapper) {
       isNotNull();
       T[] array = convertArray(actual, elementType, valueMapper);
       assertArrayNotNull(array);
@@ -153,7 +155,7 @@ public abstract class AbstractJsonArrayAssert<SELF extends AbstractJsonArrayAsse
       return myself;
    }
 
-   private <T> void containsExactly(T[] expected, Function<JsonElement, T> valueMapper) {
+   private <T> void containsExactly(T[] expected, Function<JsonNode, T> valueMapper) {
       isNotNull();
       if (actual.size() != expected.length) {
          failWithMessage("Expected exactly <%d> elements, was <%d>: %s",

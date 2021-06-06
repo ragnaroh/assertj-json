@@ -5,38 +5,45 @@ import static java.util.Objects.requireNonNull;
 import java.math.BigDecimal;
 import java.time.DateTimeException;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.HashSet;
-import java.util.LinkedHashSet;
+import java.util.Iterator;
+import java.util.List;
 import java.util.Set;
 import java.util.function.Consumer;
 import java.util.function.Function;
+import java.util.stream.Collectors;
+import java.util.stream.StreamSupport;
 
-import com.google.gson.Gson;
-import com.google.gson.JsonArray;
-import com.google.gson.JsonElement;
-import com.google.gson.JsonNull;
-import com.google.gson.JsonObject;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.node.ArrayNode;
+import com.fasterxml.jackson.databind.node.NullNode;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 
 public abstract class AbstractJsonObjectAssert<SELF extends AbstractJsonObjectAssert<SELF>>
-      extends AbstractJsonAssert<SELF, JsonObject> {
+      extends AbstractJsonAssert<SELF, ObjectNode> {
 
    private final Set<String> assertedFields = new HashSet<>();
 
-   protected AbstractJsonObjectAssert(String actual, Class<SELF> selfType) {
-      this(toJsonObject(actual), selfType);
+   protected AbstractJsonObjectAssert(String actual, Class<SELF> selfType, ObjectMapper mapper)
+         throws JsonProcessingException {
+      this(toJsonObject(actual, mapper), selfType);
    }
 
-   protected AbstractJsonObjectAssert(JsonObject actual, Class<SELF> selfType) {
+   protected AbstractJsonObjectAssert(ObjectNode actual, Class<SELF> selfType) {
       super(actual, selfType);
    }
 
-   private static JsonObject toJsonObject(String json) {
-      return new Gson().fromJson(json, JsonObject.class);
+   private static ObjectNode toJsonObject(String json, ObjectMapper mapper) throws JsonProcessingException {
+      return mapper.readValue(json, ObjectNode.class);
    }
 
    public SELF isEmpty() {
       isNotNull();
-      Set<String> fieldNames = actual.keySet();
+      Iterable<String> iterable = actual::fieldNames;
+      List<String> fieldNames = StreamSupport.stream(iterable.spliterator(), false).collect(Collectors.toList());
       if (!fieldNames.isEmpty()) {
          failWithMessage("Expected JSON object to be empty, contained fields: %s", fieldNames);
       }
@@ -220,14 +227,14 @@ public abstract class AbstractJsonObjectAssert<SELF extends AbstractJsonObjectAs
       return myself;
    }
 
-   public SELF containsObjectSatisfying(String fieldName, Consumer<JsonObject> valueRequirements) {
+   public SELF containsObjectSatisfying(String fieldName, Consumer<ObjectNode> valueRequirements) {
       requireNonNull(fieldName);
       requireNonNull(valueRequirements);
       valueRequirements.accept(getJsonObject(fieldName));
       return myself;
    }
 
-   public SELF containsArraySatisfying(String fieldName, Consumer<JsonArray> valueRequirements) {
+   public SELF containsArraySatisfying(String fieldName, Consumer<ArrayNode> valueRequirements) {
       requireNonNull(fieldName);
       requireNonNull(valueRequirements);
       valueRequirements.accept(getJsonArray(fieldName));
@@ -256,7 +263,7 @@ public abstract class AbstractJsonObjectAssert<SELF extends AbstractJsonObjectAs
 
    public SELF containsEmptyObject(String fieldName) {
       requireNonNull(fieldName);
-      JsonObject actualValue = getJsonObject(fieldName);
+      ObjectNode actualValue = getJsonObject(fieldName);
       if (actualValue.size() != 0) {
          failFieldWithMessage(fieldName, "Expected empty object, was: <%s>", actualValue);
       }
@@ -265,7 +272,7 @@ public abstract class AbstractJsonObjectAssert<SELF extends AbstractJsonObjectAs
 
    public SELF containsEmptyArray(String fieldName) {
       requireNonNull(fieldName);
-      JsonArray actualValue = getJsonArray(fieldName);
+      ArrayNode actualValue = getJsonArray(fieldName);
       if (actualValue.size() != 0) {
          failFieldWithMessage(fieldName, "Expected empty array, was: <%s>", actualValue);
       }
@@ -295,7 +302,7 @@ public abstract class AbstractJsonObjectAssert<SELF extends AbstractJsonObjectAs
    }
 
    private LocalDateTime getLocalDateTime(String fieldName) {
-      JsonArray jsonArray = getJsonArray(fieldName);
+      ArrayNode jsonArray = getJsonArray(fieldName);
       Integer[] array = getArray(fieldName, Integer.class, AbstractJsonAssert::toInteger);
       try {
          if (array.length == 5) {
@@ -336,17 +343,17 @@ public abstract class AbstractJsonObjectAssert<SELF extends AbstractJsonObjectAs
 
    public SELF containsObjectArrayOfSize(String fieldName, int expectedSize) {
       requireNonNull(fieldName);
-      return containsArrayOfSize(fieldName, JsonObject.class, AbstractJsonAssert::toJsonObject, expectedSize);
+      return containsArrayOfSize(fieldName, ObjectNode.class, AbstractJsonAssert::toJsonObject, expectedSize);
    }
 
    public SELF containsArrayArrayOfSize(String fieldName, int expectedSize) {
       requireNonNull(fieldName);
-      return containsArrayOfSize(fieldName, JsonArray.class, AbstractJsonAssert::toJsonArray, expectedSize);
+      return containsArrayOfSize(fieldName, ArrayNode.class, AbstractJsonAssert::toJsonArray, expectedSize);
    }
 
    private <T> SELF containsArrayOfSize(String fieldName,
                                         Class<T> elementType,
-                                        Function<JsonElement, T> valueGetter,
+                                        Function<JsonNode, T> valueGetter,
                                         int expectedSize) {
       T[] actualValue = getArray(fieldName, elementType, valueGetter);
       if (actualValue.length != expectedSize) {
@@ -400,22 +407,22 @@ public abstract class AbstractJsonObjectAssert<SELF extends AbstractJsonObjectAs
       return myself;
    }
 
-   public SELF containsObjectArraySatisfying(String fieldName, Consumer<JsonObject[]> requirements) {
+   public SELF containsObjectArraySatisfying(String fieldName, Consumer<ObjectNode[]> requirements) {
       requireNonNull(fieldName);
-      JsonObject[] actualValue = getArray(fieldName, JsonObject.class, AbstractJsonAssert::toJsonObject);
+      ObjectNode[] actualValue = getArray(fieldName, ObjectNode.class, AbstractJsonAssert::toJsonObject);
       requirements.accept(actualValue);
       return myself;
    }
 
-   public SELF containsArrayArraySatisfying(String fieldName, Consumer<JsonArray[]> requirements) {
+   public SELF containsArrayArraySatisfying(String fieldName, Consumer<ArrayNode[]> requirements) {
       requireNonNull(fieldName);
-      JsonArray[] actualValue = getArray(fieldName, JsonArray.class, AbstractJsonAssert::toJsonArray);
+      ArrayNode[] actualValue = getArray(fieldName, ArrayNode.class, AbstractJsonAssert::toJsonArray);
       requirements.accept(actualValue);
       return myself;
    }
 
-   private <T> T[] getArray(String fieldName, Class<T> elementType, Function<JsonElement, T> valueGetter) {
-      JsonArray jsonArray = getJsonArray(fieldName);
+   private <T> T[] getArray(String fieldName, Class<T> elementType, Function<JsonNode, T> valueGetter) {
+      ArrayNode jsonArray = getJsonArray(fieldName);
       T[] array = convertArray(jsonArray, elementType, valueGetter);
       if (array == null) {
          failFieldWithMessage(fieldName, "Unexpected type in array, was: <%s>", jsonArray);
@@ -427,16 +434,22 @@ public abstract class AbstractJsonObjectAssert<SELF extends AbstractJsonObjectAs
     * Verifies that all fields have been asserted (by any of the "contains*" methods).
     */
    public void containsNoUnassertedFields() {
-      Set<String> actualFields = new LinkedHashSet<>(actual.keySet());
-      actualFields.removeAll(assertedFields);
-      if (!actualFields.isEmpty()) {
-         failWithMessage("Found additional fields: <%s>", actualFields);
+      Iterator<String> actualFields = actual.fieldNames();
+      List<String> additionalFields = new ArrayList<>();
+      while (actualFields.hasNext()) {
+         String field = actualFields.next();
+         if (!assertedFields.contains(field)) {
+            additionalFields.add(field);
+         }
+      }
+      if (!additionalFields.isEmpty()) {
+         failWithMessage("Found additional fields: <%s>", additionalFields);
       }
    }
 
    private String getString(String fieldName) {
       isNotNull();
-      JsonElement jsonElement = getJsonElement(fieldName);
+      JsonNode jsonElement = getJsonElement(fieldName);
       String string = toString(jsonElement);
       if (string == null) {
          failFieldWithMessage(fieldName, "Expected string, was: <%s>", jsonElement);
@@ -446,7 +459,7 @@ public abstract class AbstractJsonObjectAssert<SELF extends AbstractJsonObjectAs
 
    private Number getNumber(String fieldName) {
       isNotNull();
-      JsonElement jsonElement = getJsonElement(fieldName);
+      JsonNode jsonElement = getJsonElement(fieldName);
       Number value = toNumber(jsonElement);
       if (value == null) {
          failFieldWithMessage(fieldName, "Expected number, was: <%s>", jsonElement);
@@ -456,7 +469,7 @@ public abstract class AbstractJsonObjectAssert<SELF extends AbstractJsonObjectAs
 
    private Number getIntegralNumber(String fieldName) {
       isNotNull();
-      JsonElement jsonElement = getJsonElement(fieldName);
+      JsonNode jsonElement = getJsonElement(fieldName);
       Number value = toIntegralNumber(jsonElement);
       if (value == null) {
          failFieldWithMessage(fieldName, "Expected integral number, was: <%s>", jsonElement);
@@ -466,7 +479,7 @@ public abstract class AbstractJsonObjectAssert<SELF extends AbstractJsonObjectAs
 
    private boolean getBoolean(String fieldName) {
       isNotNull();
-      JsonElement jsonElement = getJsonElement(fieldName);
+      JsonNode jsonElement = getJsonElement(fieldName);
       Boolean value = toBoolean(jsonElement);
       if (value == null) {
          failFieldWithMessage(fieldName, "Expected boolean, was: <%s>", jsonElement);
@@ -474,39 +487,39 @@ public abstract class AbstractJsonObjectAssert<SELF extends AbstractJsonObjectAs
       return value;
    }
 
-   private JsonNull getJsonNull(String fieldName) {
+   private NullNode getJsonNull(String fieldName) {
       isNotNull();
-      JsonElement jsonElement = getJsonElement(fieldName);
-      JsonNull value = toJsonNull(jsonElement);
+      JsonNode jsonElement = getJsonElement(fieldName);
+      NullNode value = toJsonNull(jsonElement);
       if (value == null) {
          failFieldWithMessage(fieldName, "Expected <null>, was: <%s>", jsonElement);
       }
       return value;
    }
 
-   private JsonObject getJsonObject(String fieldName) {
+   private ObjectNode getJsonObject(String fieldName) {
       isNotNull();
-      JsonElement jsonElement = getJsonElement(fieldName);
-      JsonObject value = toJsonObject(jsonElement);
+      JsonNode jsonElement = getJsonElement(fieldName);
+      ObjectNode value = toJsonObject(jsonElement);
       if (value == null) {
          failFieldWithMessage(fieldName, "Expected JSON object, was: <%s>", jsonElement);
       }
       return value;
    }
 
-   private JsonArray getJsonArray(String fieldName) {
+   private ArrayNode getJsonArray(String fieldName) {
       isNotNull();
-      JsonElement jsonElement = getJsonElement(fieldName);
-      JsonArray value = toJsonArray(jsonElement);
+      JsonNode jsonElement = getJsonElement(fieldName);
+      ArrayNode value = toJsonArray(jsonElement);
       if (value == null) {
          failFieldWithMessage(fieldName, "Expected JSON array, was: <%s>", jsonElement);
       }
       return value;
    }
 
-   private JsonElement getJsonElement(String fieldName) {
+   private JsonNode getJsonElement(String fieldName) {
       isNotNull();
-      JsonElement value = actual.get(fieldName);
+      JsonNode value = actual.get(fieldName);
       if (value == null) {
          failWithMessage("Expected field named \"%s\"", fieldName);
       }
