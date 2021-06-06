@@ -17,20 +17,24 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 
+@SuppressWarnings("java:S119")
 public abstract class AbstractArrayNodeAssert<SELF extends AbstractArrayNodeAssert<SELF>>
       extends AbstractJsonAssert<SELF, ArrayNode> {
 
-   protected AbstractArrayNodeAssert(String actual, Class<SELF> selfType, ObjectMapper mapper)
-         throws JsonProcessingException {
-      this(toArrayNode(actual, mapper), selfType);
+   protected AbstractArrayNodeAssert(String actual, Class<SELF> selfType) {
+      this(toArrayNode(actual), selfType);
    }
 
    protected AbstractArrayNodeAssert(ArrayNode actual, Class<SELF> selfType) {
       super(actual, selfType);
    }
 
-   private static ArrayNode toArrayNode(String json, ObjectMapper mapper) throws JsonProcessingException {
-      return mapper.readValue(json, ArrayNode.class);
+   private static ArrayNode toArrayNode(String json) {
+      try {
+         return new ObjectMapper().readValue(json, ArrayNode.class);
+      } catch (JsonProcessingException e) {
+         throw new IllegalArgumentException("Could not parse actual value as JSON array node: " + e.getMessage());
+      }
    }
 
    public SELF isEmpty() {
@@ -56,11 +60,6 @@ public abstract class AbstractArrayNodeAssert<SELF extends AbstractArrayNodeAsse
 
    public SELF containsNumbersSatisfying(Consumer<Number> requirements) {
       asNumberArray().allSatisfy(requirements);
-      return myself;
-   }
-
-   public SELF containsBigDecimalsSatisfying(Consumer<BigDecimal> requirements) {
-      asBigDecimalArray().allSatisfy(requirements);
       return myself;
    }
 
@@ -158,16 +157,16 @@ public abstract class AbstractArrayNodeAssert<SELF extends AbstractArrayNodeAsse
    private <T> void containsExactly(T[] expected, Function<JsonNode, T> valueMapper) {
       isNotNull();
       if (actual.size() != expected.length) {
-         failWithMessage("Expected exactly <%d> elements, was <%d>: %s",
-                         expected.length,
-                         actual.size(),
-                         actual.toString());
+         throw failure("Expected exactly <%d> elements, was <%d>: %s",
+                       expected.length,
+                       actual.size(),
+                       actual.toString());
       }
       for (int i = 0; i < actual.size(); i++) {
          T actualElement = valueMapper.apply(actual.get(i));
          T expectedElement = expected[i];
          if (!expectedElement.equals(actualElement)) {
-            failWithMessage("Expected <%s> at array position %d, was <%s>", expectedElement, i, actualElement);
+            throw failure("Expected <%s> at array position %d, was <%s>", expectedElement, i, actualElement);
          }
       }
    }

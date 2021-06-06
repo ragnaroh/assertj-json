@@ -16,20 +16,24 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 
+@SuppressWarnings("java:S119")
 public abstract class AbstractJsonNodeAssert<SELF extends AbstractJsonNodeAssert<SELF>>
       extends AbstractJsonAssert<SELF, JsonNode> {
 
-   protected AbstractJsonNodeAssert(String actual, Class<SELF> selfType, ObjectMapper mapper)
-         throws JsonProcessingException {
-      super(toJsonElement(actual, mapper), selfType);
+   protected AbstractJsonNodeAssert(String actual, Class<SELF> selfType) {
+      super(toJsonNode(actual), selfType);
    }
 
    protected AbstractJsonNodeAssert(JsonNode actual, Class<SELF> selfType) {
       super(actual, selfType);
    }
 
-   private static JsonNode toJsonElement(String json, ObjectMapper mapper) throws JsonProcessingException {
-      return mapper.readValue(json, JsonNode.class);
+   private static JsonNode toJsonNode(String json) {
+      try {
+         return new ObjectMapper().readValue(json, JsonNode.class);
+      } catch (JsonProcessingException e) {
+         throw new IllegalArgumentException("Could not parse actual value as JSON node: " + e.getMessage());
+      }
    }
 
    public SELF isString() {
@@ -41,18 +45,9 @@ public abstract class AbstractJsonNodeAssert<SELF extends AbstractJsonNodeAssert
       return myself;
    }
 
-   public SELF isBigDecimal() {
+   public SELF isNumber() {
       isNotNull();
-      BigDecimal value = toBigDecimal(actual);
-      if (value == null) {
-         failWithMessage("Expected JSON node to be a number, was <%s>", actual);
-      }
-      return myself;
-   }
-
-   public SELF isDouble() {
-      isNotNull();
-      Double value = toDouble(actual);
+      Number value = toNumber(actual);
       if (value == null) {
          failWithMessage("Expected JSON node to be a number, was <%s>", actual);
       }
@@ -105,27 +100,25 @@ public abstract class AbstractJsonNodeAssert<SELF extends AbstractJsonNodeAssert
       return myself;
    }
 
-   public SELF isANumberEqualTo(Number expected) {
+   public SELF isNumberEqualTo(Number expected) {
       requireNonNull(expected);
-      isNotNull();
-      Number value = toNumber(actual);
-      if (value == null || !value.equals(expected)) {
-         failWithMessage("Expected JSON node to be a number equal to <%s>, was <%s>", expected, actual);
-      }
-      return myself;
+      return isNumberEqualTo(new BigDecimal(expected.toString()));
+   }
+
+   public SELF isNumberEqualTo(int expected) {
+      return isNumberEqualTo(new BigDecimal(expected));
+   }
+
+   public SELF isNumberEqualTo(double expected) {
+      return isNumberEqualTo(BigDecimal.valueOf(expected));
+   }
+
+   public SELF isNumberEqualTo(String expectedNumberAsString) {
+      requireNonNull(expectedNumberAsString);
+      return isNumberEqualTo(new BigDecimal(expectedNumberAsString));
    }
 
    public SELF isNumberEqualTo(BigDecimal expected) {
-      requireNonNull(expected);
-      isNotNull();
-      BigDecimal value = toBigDecimal(actual);
-      if (value == null || !value.equals(expected)) {
-         failWithMessage("Expected JSON node to be a number equal to <%s>, was <%s>", expected, actual);
-      }
-      return myself;
-   }
-
-   public SELF isNumberEqualByComparingTo(BigDecimal expected) {
       requireNonNull(expected);
       isNotNull();
       BigDecimal value = toBigDecimal(actual);
@@ -135,34 +128,16 @@ public abstract class AbstractJsonNodeAssert<SELF extends AbstractJsonNodeAssert
       return myself;
    }
 
-   public SELF isNumberEqualTo(double expected) {
-      requireNonNull(expected);
-      isNotNull();
-      Double value = toDouble(actual);
-      if (value == null || value.doubleValue() != expected) {
-         failWithMessage("Expected JSON node to be a number equal to <%s>, was <%s>", actual);
-      }
-      return myself;
-   }
-
-   public SELF isIntegerEqualTo(int expected) {
-      isNotNull();
-      Integer value = toInteger(actual);
-      if (value == null || value.intValue() != expected) {
-         failWithMessage("Expected JSON node to be an integer equal to <%d>, was <%s>", expected, actual);
-      }
-      return myself;
-   }
-
    public SELF isBooleanEqualTo(boolean expected) {
       isNotNull();
       Boolean value = toBoolean(actual);
-      if (value == null) {
+      if (value == null || value.booleanValue() != expected) {
          failWithMessage("Expected JSON node to be a boolean equal to <%s>, was <%s>", expected, actual);
       }
       return myself;
    }
 
+   @Override
    public StringAssert asString() {
       isNotNull();
       String value = toString(actual);
@@ -214,7 +189,7 @@ public abstract class AbstractJsonNodeAssert<SELF extends AbstractJsonNodeAssert
       if (objectNode == null) {
          failWithMessage("Expected JSON node to be an object, was <%s>", actual);
       }
-      return new ObjectNodeAssert(objectNode);
+      return new ObjectNodeAssert(objectNode).withObjectMapper(mapper);
    }
 
    public JsonArrayAssert asArrayNode() {
@@ -223,7 +198,7 @@ public abstract class AbstractJsonNodeAssert<SELF extends AbstractJsonNodeAssert
       if (arrayNode == null) {
          failWithMessage("Expected JSON node to be an array, was <%s>", actual);
       }
-      return new JsonArrayAssert(arrayNode);
+      return new JsonArrayAssert(arrayNode).withObjectMapper(mapper);
    }
 
 }

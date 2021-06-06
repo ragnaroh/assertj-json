@@ -9,26 +9,45 @@ import java.util.function.Function;
 import org.assertj.core.api.AbstractAssert;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.NullNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 
+@SuppressWarnings({ "java:S119", "java:S2160" })
 public abstract class AbstractJsonAssert<SELF extends AbstractJsonAssert<SELF, ACTUAL>, ACTUAL extends JsonNode>
       extends AbstractAssert<SELF, ACTUAL> {
+
+   protected ObjectMapper mapper = new ObjectMapper().registerModule(new JavaTimeModule());
 
    protected AbstractJsonAssert(ACTUAL actual, Class<SELF> selfType) {
       super(actual, selfType);
    }
 
-   public SELF isEqualTo(String expected) throws JsonProcessingException {
-      requireNonNull(expected);
-      JsonNode expectedJson = new ObjectMapper().readValue(expected, JsonNode.class);
-      if (!expectedJson.equals(actual)) {
-         failWithMessage("Expected <%s> to be equal to <%s>", actual, expected);
-      }
+   public SELF withObjectMapper(ObjectMapper mapper) {
+      this.mapper = mapper;
       return myself;
+   }
+
+   public SELF withDeserializationFeature(DeserializationFeature feature, boolean state) {
+      mapper.configure(feature, state);
+      return myself;
+   }
+
+   public SELF isEqualTo(String expected) {
+      requireNonNull(expected);
+      try {
+         JsonNode expectedJson = mapper.readValue(expected, JsonNode.class);
+         if (!expectedJson.equals(actual)) {
+            throw failure("Expected <%s> to be equal to <%s>", actual, expected);
+         }
+         return myself;
+      } catch (JsonProcessingException e) {
+         throw new IllegalArgumentException("Could not parse expected value as JSON node");
+      }
    }
 
    static int[] unbox(Integer[] array) {
@@ -79,6 +98,7 @@ public abstract class AbstractJsonAssert<SELF extends AbstractJsonAssert<SELF, A
       return boxed;
    }
 
+   @SuppressWarnings("java:S1168")
    <T> T[] convertArray(ArrayNode arrayNode, Class<T> elementType, Function<JsonNode, T> valueMapper) {
       T[] array = (T[]) Array.newInstance(elementType, arrayNode.size());
       for (int i = 0; i < arrayNode.size(); i++) {
@@ -106,13 +126,9 @@ public abstract class AbstractJsonAssert<SELF extends AbstractJsonAssert<SELF, A
       return null;
    }
 
-   static Number toIntegralNumber(JsonNode jsonNode) {
-      return toInteger(jsonNode);
-   }
-
    static BigDecimal toBigDecimal(JsonNode jsonNode) {
-      if (jsonNode.isBigDecimal()) {
-         return jsonNode.decimalValue();
+      if (jsonNode.isNumber()) {
+         return new BigDecimal(jsonNode.numberValue().toString());
       }
       return null;
    }
@@ -132,6 +148,7 @@ public abstract class AbstractJsonAssert<SELF extends AbstractJsonAssert<SELF, A
       return null;
    }
 
+   @SuppressWarnings("java:S2447")
    static Boolean toBoolean(JsonNode jsonNode) {
       if (jsonNode.isBoolean()) {
          return jsonNode.booleanValue();

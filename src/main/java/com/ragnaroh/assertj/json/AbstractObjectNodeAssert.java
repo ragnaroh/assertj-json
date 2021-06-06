@@ -3,8 +3,9 @@ package com.ragnaroh.assertj.json;
 import static java.util.Objects.requireNonNull;
 
 import java.math.BigDecimal;
-import java.time.DateTimeException;
+import java.time.Instant;
 import java.time.LocalDateTime;
+import java.time.ZonedDateTime;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -22,22 +23,26 @@ import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.NullNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 
+@SuppressWarnings({ "java:S2160", "java:S119" })
 public abstract class AbstractObjectNodeAssert<SELF extends AbstractObjectNodeAssert<SELF>>
       extends AbstractJsonAssert<SELF, ObjectNode> {
 
    private final Set<String> assertedFields = new HashSet<>();
 
-   protected AbstractObjectNodeAssert(String actual, Class<SELF> selfType, ObjectMapper mapper)
-         throws JsonProcessingException {
-      this(toObjectNode(actual, mapper), selfType);
+   protected AbstractObjectNodeAssert(String actual, Class<SELF> selfType) {
+      this(toObjectNode(actual), selfType);
    }
 
    protected AbstractObjectNodeAssert(ObjectNode actual, Class<SELF> selfType) {
       super(actual, selfType);
    }
 
-   private static ObjectNode toObjectNode(String json, ObjectMapper mapper) throws JsonProcessingException {
-      return mapper.readValue(json, ObjectNode.class);
+   private static ObjectNode toObjectNode(String json) {
+      try {
+         return new ObjectMapper().readValue(json, ObjectNode.class);
+      } catch (JsonProcessingException e) {
+         throw new IllegalArgumentException("Could not parse actual value as JSON object node: " + e.getMessage());
+      }
    }
 
    public SELF isEmpty() {
@@ -74,7 +79,7 @@ public abstract class AbstractObjectNodeAssert<SELF extends AbstractObjectNodeAs
 
    public SELF containsInteger(String fieldName) {
       requireNonNull(fieldName);
-      getIntegralNumber(fieldName);
+      getInteger(fieldName);
       return myself;
    }
 
@@ -86,7 +91,7 @@ public abstract class AbstractObjectNodeAssert<SELF extends AbstractObjectNodeAs
 
    public SELF containsNull(String fieldName) {
       requireNonNull(fieldName);
-      getJsonNull(fieldName);
+      getNullNode(fieldName);
       return myself;
    }
 
@@ -107,25 +112,16 @@ public abstract class AbstractObjectNodeAssert<SELF extends AbstractObjectNodeAs
       requireNonNull(expectedValue);
       String actualValue = getString(fieldName);
       if (!expectedValue.equals(actualValue)) {
-         failValueCompare(fieldName, expectedValue, actualValue);
+         throw fieldValueFailure(fieldName, expectedValue, actualValue);
       }
       return myself;
    }
 
    public SELF contains(String fieldName, int expectedValue) {
       requireNonNull(fieldName);
-      Number actualValue = getIntegralNumber(fieldName);
+      Integer actualValue = getInteger(fieldName);
       if (actualValue.intValue() != expectedValue) {
-         failValueCompare(fieldName, expectedValue, actualValue);
-      }
-      return myself;
-   }
-
-   public SELF contains(String fieldName, long expectedValue) {
-      requireNonNull(fieldName);
-      Number actualValue = getIntegralNumber(fieldName);
-      if (actualValue.longValue() != expectedValue) {
-         failValueCompare(fieldName, expectedValue, actualValue);
+         throw fieldValueFailure(fieldName, expectedValue, actualValue);
       }
       return myself;
    }
@@ -133,8 +129,8 @@ public abstract class AbstractObjectNodeAssert<SELF extends AbstractObjectNodeAs
    public SELF contains(String fieldName, double expectedValue) {
       requireNonNull(fieldName);
       Number actualValue = getNumber(fieldName);
-      if (Double.doubleToLongBits(actualValue.doubleValue()) != Double.doubleToLongBits(expectedValue)) {
-         failValueCompare(fieldName, expectedValue, actualValue);
+      if (actualValue.doubleValue() != expectedValue) {
+         throw fieldValueFailure(fieldName, expectedValue, actualValue);
       }
       return myself;
    }
@@ -144,7 +140,7 @@ public abstract class AbstractObjectNodeAssert<SELF extends AbstractObjectNodeAs
       requireNonNull(expectedValue);
       Number actualValue = getNumber(fieldName);
       if (new BigDecimal(actualValue.toString()).compareTo(expectedValue) != 0) {
-         failValueCompare(fieldName, expectedValue, actualValue);
+         throw fieldValueFailure(fieldName, expectedValue, actualValue);
       }
       return myself;
    }
@@ -154,7 +150,7 @@ public abstract class AbstractObjectNodeAssert<SELF extends AbstractObjectNodeAs
       requireNonNull(expectedValueAsString);
       Number actualValue = getNumber(fieldName);
       if (new BigDecimal(actualValue.toString()).compareTo(new BigDecimal(expectedValueAsString)) != 0) {
-         failValueCompare(fieldName, expectedValueAsString, actualValue);
+         throw fieldValueFailure(fieldName, expectedValueAsString, actualValue);
       }
       return myself;
    }
@@ -163,7 +159,7 @@ public abstract class AbstractObjectNodeAssert<SELF extends AbstractObjectNodeAs
       requireNonNull(fieldName);
       boolean actualValue = getBoolean(fieldName);
       if (actualValue != expectedValue) {
-         failValueCompare(fieldName, expectedValue, actualValue);
+         throw fieldValueFailure(fieldName, expectedValue, actualValue);
       }
       return myself;
    }
@@ -173,23 +169,67 @@ public abstract class AbstractObjectNodeAssert<SELF extends AbstractObjectNodeAs
       requireNonNull(expectedValue);
       LocalDateTime actualValue = getLocalDateTime(fieldName);
       if (!actualValue.equals(expectedValue)) {
-         failValueCompare(fieldName, expectedValue, actualValue);
+         throw fieldValueFailure(fieldName, expectedValue, actualValue);
       }
       return myself;
    }
 
-   public SELF containsLocalDateTime(String fieldName, String expectedValue) {
+   public SELF contains(String fieldName, ZonedDateTime expectedValue) {
       requireNonNull(fieldName);
       requireNonNull(expectedValue);
-      LocalDateTime actualValue = getLocalDateTime(fieldName);
-      if (!actualValue.equals(LocalDateTime.parse(expectedValue))) {
-         failValueCompare(fieldName, expectedValue, actualValue);
+      ZonedDateTime actualValue = getZonedDateTime(fieldName);
+      if (!actualValue.isEqual(expectedValue)) {
+         throw fieldValueFailure(fieldName, expectedValue, actualValue);
       }
       return myself;
    }
 
-   private void failValueCompare(String fieldName, Object expectedValue, Object actualValue) {
-      failFieldWithMessage(fieldName, "Expected value <%s>, was: <%s>", expectedValue, actualValue);
+   public SELF contains(String fieldName, Instant expectedValue) {
+      requireNonNull(fieldName);
+      requireNonNull(expectedValue);
+      Instant actualValue = getInstant(fieldName);
+      if (!actualValue.equals(expectedValue)) {
+         throw fieldValueFailure(fieldName, expectedValue, actualValue);
+      }
+      return myself;
+   }
+
+   public SELF containsLocalDateTime(String fieldName, String expectedLocalDateTimeAsString) {
+      requireNonNull(fieldName);
+      requireNonNull(expectedLocalDateTimeAsString);
+      LocalDateTime actualValue = getLocalDateTime(fieldName);
+      if (!actualValue.equals(LocalDateTime.parse(expectedLocalDateTimeAsString))) {
+         throw fieldValueFailure(fieldName, expectedLocalDateTimeAsString, actualValue);
+      }
+      return myself;
+   }
+
+   public SELF containsInstant(String fieldName, String expectedInstantAsString) {
+      requireNonNull(fieldName);
+      requireNonNull(expectedInstantAsString);
+      Instant actualValue = getInstant(fieldName);
+      if (!actualValue.equals(Instant.parse(expectedInstantAsString))) {
+         throw fieldValueFailure(fieldName, expectedInstantAsString, actualValue);
+      }
+      return myself;
+   }
+
+   private AssertionError fieldValueFailure(String fieldName, Object expectedValue, Object actualValue) {
+      return fieldFailure(fieldName, "Expected value <%s>, was: <%s>", expectedValue, actualValue);
+   }
+
+   public SELF containsNodeSatisfying(String fieldName, Consumer<JsonNode> valueRequirements) {
+      requireNonNull(fieldName);
+      requireNonNull(valueRequirements);
+      valueRequirements.accept(getJsonNode(fieldName));
+      return myself;
+   }
+
+   public <T> SELF containsNodeSatisfying(String fieldName, Class<T> nodeType, Consumer<T> valueRequirements) {
+      requireNonNull(fieldName);
+      requireNonNull(valueRequirements);
+      valueRequirements.accept(getNode(fieldName, nodeType));
+      return myself;
    }
 
    public SELF containsStringSatisfying(String fieldName, Consumer<String> valueRequirements) {
@@ -202,14 +242,7 @@ public abstract class AbstractObjectNodeAssert<SELF extends AbstractObjectNodeAs
    public SELF containsIntSatisfying(String fieldName, Consumer<Integer> valueRequirements) {
       requireNonNull(fieldName);
       requireNonNull(valueRequirements);
-      valueRequirements.accept(getIntegralNumber(fieldName).intValue());
-      return myself;
-   }
-
-   public SELF containsLongSatisfying(String fieldName, Consumer<Long> valueRequirements) {
-      requireNonNull(fieldName);
-      requireNonNull(valueRequirements);
-      valueRequirements.accept(getIntegralNumber(fieldName).longValue());
+      valueRequirements.accept(getInteger(fieldName));
       return myself;
    }
 
@@ -246,7 +279,7 @@ public abstract class AbstractObjectNodeAssert<SELF extends AbstractObjectNodeAs
       requireNonNull(valueRegex);
       String actualValue = getString(fieldName);
       if (!actualValue.matches(valueRegex)) {
-         failFieldWithMessage(fieldName, "Expected value matching regex <%s>, was: <%s>", valueRegex, actualValue);
+         throw fieldFailure(fieldName, "Expected value matching regex <%s>, was: <%s>", valueRegex, actualValue);
       }
       return myself;
    }
@@ -256,7 +289,7 @@ public abstract class AbstractObjectNodeAssert<SELF extends AbstractObjectNodeAs
       requireNonNull(valueRegex);
       Number actualValue = getNumber(fieldName);
       if (!actualValue.toString().matches(valueRegex)) {
-         failFieldWithMessage(fieldName, "Expected value matching regex <%s>, was: <%s>", valueRegex, actualValue);
+         throw fieldFailure(fieldName, "Expected value matching regex <%s>, was: <%s>", valueRegex, actualValue);
       }
       return myself;
    }
@@ -265,7 +298,7 @@ public abstract class AbstractObjectNodeAssert<SELF extends AbstractObjectNodeAs
       requireNonNull(fieldName);
       ObjectNode actualValue = getObjectNode(fieldName);
       if (actualValue.size() != 0) {
-         failFieldWithMessage(fieldName, "Expected empty object, was: <%s>", actualValue);
+         throw fieldFailure(fieldName, "Expected empty object, was: <%s>", actualValue);
       }
       return myself;
    }
@@ -274,17 +307,7 @@ public abstract class AbstractObjectNodeAssert<SELF extends AbstractObjectNodeAs
       requireNonNull(fieldName);
       ArrayNode actualValue = getArrayNode(fieldName);
       if (actualValue.size() != 0) {
-         failFieldWithMessage(fieldName, "Expected empty array, was: <%s>", actualValue);
-      }
-      return myself;
-   }
-
-   public SELF containsLocalDateTimeArray(String fieldName, LocalDateTime expectedValue) {
-      requireNonNull(fieldName);
-      requireNonNull(expectedValue);
-      LocalDateTime actualValue = getLocalDateTime(fieldName);
-      if (!actualValue.equals(expectedValue)) {
-         failFieldWithMessage(fieldName, "Expected datetime %s, was: <%s>", expectedValue, actualValue);
+         throw fieldFailure(fieldName, "Expected empty array, was: <%s>", actualValue);
       }
       return myself;
    }
@@ -295,30 +318,43 @@ public abstract class AbstractObjectNodeAssert<SELF extends AbstractObjectNodeAs
       return myself;
    }
 
-   public SELF containsAnyLocalDateTime(String fieldName) {
+   public SELF containsInstantSatisfying(String fieldName, Consumer<ZonedDateTime> valueRequirements) {
+      requireNonNull(fieldName);
+      valueRequirements.accept(getZonedDateTime(fieldName));
+      return myself;
+   }
+
+   public SELF containsLocalDateTime(String fieldName) {
       requireNonNull(fieldName);
       getLocalDateTime(fieldName);
       return myself;
    }
 
    private LocalDateTime getLocalDateTime(String fieldName) {
-      ArrayNode arrayNode = getArrayNode(fieldName);
-      Integer[] array = getArray(fieldName, Integer.class, AbstractJsonAssert::toInteger);
+      JsonNode node = getJsonNode(fieldName);
       try {
-         if (array.length == 5) {
-            return LocalDateTime.of(array[0], array[1], array[2], array[3], array[4]);
-         }
-         if (array.length == 6) {
-            return LocalDateTime.of(array[0], array[1], array[2], array[3], array[4], array[5]);
-         }
-         if (array.length == 7) {
-            return LocalDateTime.of(array[0], array[1], array[2], array[3], array[4], array[5], array[6]);
-         }
-      } catch (DateTimeException ex) {
-         failFieldWithMessage(fieldName, "Invalid datetime array: <%s>", arrayNode);
+         return mapper.treeToValue(node, LocalDateTime.class);
+      } catch (JsonProcessingException e) {
+         throw fieldFailure(fieldName, "Expected field to be parsable as LocalDateTime, was <%s>", node);
       }
-      failFieldWithMessage(fieldName, "Expected integer array of size 5, 6 or 7, size was: <%d>", array.length);
-      return null;
+   }
+
+   private ZonedDateTime getZonedDateTime(String fieldName) {
+      JsonNode node = getJsonNode(fieldName);
+      try {
+         return mapper.treeToValue(node, ZonedDateTime.class);
+      } catch (JsonProcessingException e) {
+         throw fieldFailure(fieldName, "Expected field to be parsable as ZonedDateTime, was <%s>", node);
+      }
+   }
+
+   private Instant getInstant(String fieldName) {
+      JsonNode node = getJsonNode(fieldName);
+      try {
+         return mapper.treeToValue(node, Instant.class);
+      } catch (JsonProcessingException e) {
+         throw fieldFailure(fieldName, "Expected field to be parsable as Instant, was <%s>", node);
+      }
    }
 
    public SELF containsStringArrayOfSize(String fieldName, int expectedSize) {
@@ -333,7 +369,7 @@ public abstract class AbstractObjectNodeAssert<SELF extends AbstractObjectNodeAs
 
    public SELF containsIntegerArrayOfSize(String fieldName, int expectedSize) {
       requireNonNull(fieldName);
-      return containsArrayOfSize(fieldName, Number.class, AbstractJsonAssert::toIntegralNumber, expectedSize);
+      return containsArrayOfSize(fieldName, Number.class, AbstractJsonAssert::toInteger, expectedSize);
    }
 
    public SELF containsBooleanArrayOfSize(String fieldName, int expectedSize) {
@@ -357,10 +393,7 @@ public abstract class AbstractObjectNodeAssert<SELF extends AbstractObjectNodeAs
                                         int expectedSize) {
       T[] actualValue = getArray(fieldName, elementType, valueGetter);
       if (actualValue.length != expectedSize) {
-         failFieldWithMessage(fieldName,
-                              "Expected array of size <%d>, size was <%d>",
-                              expectedSize,
-                              actualValue.length);
+         throw fieldFailure(fieldName, "Expected array of size <%d>, size was <%d>", expectedSize, actualValue.length);
       }
       return myself;
    }
@@ -379,23 +412,9 @@ public abstract class AbstractObjectNodeAssert<SELF extends AbstractObjectNodeAs
       return myself;
    }
 
-   public SELF containsIntArraySatisfying(String fieldName, Consumer<Integer[]> requirements) {
+   public SELF containsIntegerArraySatisfying(String fieldName, Consumer<Integer[]> requirements) {
       requireNonNull(fieldName);
       Integer[] actualValue = getArray(fieldName, Integer.class, AbstractJsonAssert::toInteger);
-      requirements.accept(actualValue);
-      return myself;
-   }
-
-   public SELF containsDoubleArraySatisfying(String fieldName, Consumer<Double[]> requirements) {
-      requireNonNull(fieldName);
-      Double[] actualValue = getArray(fieldName, Double.class, AbstractJsonAssert::toDouble);
-      requirements.accept(actualValue);
-      return myself;
-   }
-
-   public SELF containsBigDecimalArraySatisfying(String fieldName, Consumer<BigDecimal[]> requirements) {
-      requireNonNull(fieldName);
-      BigDecimal[] actualValue = getArray(fieldName, BigDecimal.class, AbstractJsonAssert::toBigDecimal);
       requirements.accept(actualValue);
       return myself;
    }
@@ -425,7 +444,7 @@ public abstract class AbstractObjectNodeAssert<SELF extends AbstractObjectNodeAs
       ArrayNode arrayNode = getArrayNode(fieldName);
       T[] array = convertArray(arrayNode, elementType, valueGetter);
       if (array == null) {
-         failFieldWithMessage(fieldName, "Unexpected type in array, was: <%s>", arrayNode);
+         throw fieldFailure(fieldName, "Unexpected type in array, was: <%s>", arrayNode);
       }
       return array;
    }
@@ -449,75 +468,75 @@ public abstract class AbstractObjectNodeAssert<SELF extends AbstractObjectNodeAs
 
    private String getString(String fieldName) {
       isNotNull();
-      JsonNode jsonNode = getJsonElement(fieldName);
+      JsonNode jsonNode = getJsonNode(fieldName);
       String string = toString(jsonNode);
       if (string == null) {
-         failFieldWithMessage(fieldName, "Expected string, was: <%s>", jsonNode);
+         throw fieldFailure(fieldName, "Expected string, was: <%s>", jsonNode);
       }
       return string;
    }
 
    private Number getNumber(String fieldName) {
       isNotNull();
-      JsonNode jsonNode = getJsonElement(fieldName);
+      JsonNode jsonNode = getJsonNode(fieldName);
       Number value = toNumber(jsonNode);
       if (value == null) {
-         failFieldWithMessage(fieldName, "Expected number, was: <%s>", jsonNode);
+         throw fieldFailure(fieldName, "Expected number, was: <%s>", jsonNode);
       }
       return value;
    }
 
-   private Number getIntegralNumber(String fieldName) {
+   private Integer getInteger(String fieldName) {
       isNotNull();
-      JsonNode jsonNode = getJsonElement(fieldName);
-      Number value = toIntegralNumber(jsonNode);
+      JsonNode jsonNode = getJsonNode(fieldName);
+      Integer value = toInteger(jsonNode);
       if (value == null) {
-         failFieldWithMessage(fieldName, "Expected integral number, was: <%s>", jsonNode);
+         throw fieldFailure(fieldName, "Expected integral number, was: <%s>", jsonNode);
       }
       return value;
    }
 
    private boolean getBoolean(String fieldName) {
       isNotNull();
-      JsonNode jsonNode = getJsonElement(fieldName);
+      JsonNode jsonNode = getJsonNode(fieldName);
       Boolean value = toBoolean(jsonNode);
       if (value == null) {
-         failFieldWithMessage(fieldName, "Expected boolean, was: <%s>", jsonNode);
+         throw fieldFailure(fieldName, "Expected boolean, was: <%s>", jsonNode);
       }
       return value;
    }
 
-   private NullNode getJsonNull(String fieldName) {
+   private NullNode getNullNode(String fieldName) {
       isNotNull();
-      JsonNode jsonNode = getJsonElement(fieldName);
+      JsonNode jsonNode = getJsonNode(fieldName);
       NullNode value = toJsonNull(jsonNode);
       if (value == null) {
-         failFieldWithMessage(fieldName, "Expected <null>, was: <%s>", jsonNode);
+         throw fieldFailure(fieldName, "Expected <null>, was: <%s>", jsonNode);
       }
       return value;
    }
 
    private ObjectNode getObjectNode(String fieldName) {
       isNotNull();
-      JsonNode jsonNode = getJsonElement(fieldName);
+      JsonNode jsonNode = getJsonNode(fieldName);
       ObjectNode value = toObjectNode(jsonNode);
       if (value == null) {
-         failFieldWithMessage(fieldName, "Expected JSON object, was: <%s>", jsonNode);
+         throw fieldFailure(fieldName, "Expected JSON object, was: <%s>", jsonNode);
       }
       return value;
    }
 
    private ArrayNode getArrayNode(String fieldName) {
       isNotNull();
-      JsonNode jsonNode = getJsonElement(fieldName);
+      JsonNode jsonNode = getJsonNode(fieldName);
       ArrayNode value = toArrayNode(jsonNode);
       if (value == null) {
-         failFieldWithMessage(fieldName, "Expected JSON array, was: <%s>", jsonNode);
+         throw fieldFailure(fieldName, "Expected JSON array, was: <%s>", jsonNode);
       }
       return value;
    }
 
-   private JsonNode getJsonElement(String fieldName) {
+   private JsonNode getJsonNode(String fieldName) {
       isNotNull();
       JsonNode value = actual.get(fieldName);
       if (value == null) {
@@ -527,12 +546,27 @@ public abstract class AbstractObjectNodeAssert<SELF extends AbstractObjectNodeAs
       return value;
    }
 
+   private <T> T getNode(String fieldName, Class<T> nodeType) {
+      isNotNull();
+      JsonNode node = actual.get(fieldName);
+      try {
+         T value = mapper.treeToValue(node, nodeType);
+         if (value == null) {
+            failWithMessage("Expected field named \"%s\"", fieldName);
+         }
+         markAsAsserted(fieldName);
+         return value;
+      } catch (JsonProcessingException e) {
+         throw fieldFailure(fieldName, "Could not convert value <%s> to <%s>", node, nodeType);
+      }
+   }
+
    protected final void markAsAsserted(String fieldName) {
       assertedFields.add(fieldName);
    }
 
-   private void failFieldWithMessage(String fieldName, String message, Object... arguments) {
-      failWithMessage("Field \"" + fieldName + "\": " + message, arguments);
+   private AssertionError fieldFailure(String fieldName, String message, Object... arguments) {
+      return failure("Field \"" + fieldName + "\": " + message, arguments);
    }
 
 }

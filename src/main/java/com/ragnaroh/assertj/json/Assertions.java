@@ -1,19 +1,22 @@
 package com.ragnaroh.assertj.json;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 
+@SuppressWarnings("java:S2176")
 public class Assertions extends org.assertj.core.api.Assertions {
 
-   public static JsonNodeAssert assertThatJson(String actual) throws JsonProcessingException {
+   public static JsonNodeAssert assertThatJson(String actual) {
       return new JsonNodeAssert(actual);
    }
 
-   public static JsonNodeAssert assertThatJson(String actual, ObjectMapper mapper) throws JsonProcessingException {
-      return new JsonNodeAssert(actual, mapper);
+   public static ObjectNodeAssert assertThatJsonObject(String actual) {
+      return new ObjectNodeAssert(actual);
+   }
+
+   public static JsonArrayAssert assertThatJsonArray(String actual) {
+      return new JsonArrayAssert(actual);
    }
 
    public static ObjectNodeAssert assertThat(ObjectNode actual) {
