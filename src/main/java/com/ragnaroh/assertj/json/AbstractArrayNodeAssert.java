@@ -17,15 +17,15 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 
-public abstract class AbstractJsonArrayAssert<SELF extends AbstractJsonArrayAssert<SELF>>
+public abstract class AbstractArrayNodeAssert<SELF extends AbstractArrayNodeAssert<SELF>>
       extends AbstractJsonAssert<SELF, ArrayNode> {
 
-   protected AbstractJsonArrayAssert(String actual, Class<SELF> selfType, ObjectMapper mapper)
+   protected AbstractArrayNodeAssert(String actual, Class<SELF> selfType, ObjectMapper mapper)
          throws JsonProcessingException {
       this(toArrayNode(actual, mapper), selfType);
    }
 
-   protected AbstractJsonArrayAssert(ArrayNode actual, Class<SELF> selfType) {
+   protected AbstractArrayNodeAssert(ArrayNode actual, Class<SELF> selfType) {
       super(actual, selfType);
    }
 

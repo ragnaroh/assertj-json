@@ -22,17 +22,17 @@ import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.NullNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 
-public abstract class AbstractJsonObjectAssert<SELF extends AbstractJsonObjectAssert<SELF>>
+public abstract class AbstractObjectNodeAssert<SELF extends AbstractObjectNodeAssert<SELF>>
       extends AbstractJsonAssert<SELF, ObjectNode> {
 
    private final Set<String> assertedFields = new HashSet<>();
 
-   protected AbstractJsonObjectAssert(String actual, Class<SELF> selfType, ObjectMapper mapper)
+   protected AbstractObjectNodeAssert(String actual, Class<SELF> selfType, ObjectMapper mapper)
          throws JsonProcessingException {
       this(toObjectNode(actual, mapper), selfType);
    }
 
-   protected AbstractJsonObjectAssert(ObjectNode actual, Class<SELF> selfType) {
+   protected AbstractObjectNodeAssert(ObjectNode actual, Class<SELF> selfType) {
       super(actual, selfType);
    }
 

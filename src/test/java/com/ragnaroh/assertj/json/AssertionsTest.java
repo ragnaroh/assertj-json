@@ -11,7 +11,7 @@ import org.junit.jupiter.api.Test;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 
-class JsonObjectAssertTest {
+class AssertionsTest {
 
    private final String json = """
          {

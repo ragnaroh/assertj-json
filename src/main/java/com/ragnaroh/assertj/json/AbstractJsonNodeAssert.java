@@ -16,15 +16,15 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 
-public abstract class AbstractJsonElementAssert<SELF extends AbstractJsonElementAssert<SELF>>
+public abstract class AbstractJsonNodeAssert<SELF extends AbstractJsonNodeAssert<SELF>>
       extends AbstractJsonAssert<SELF, JsonNode> {
 
-   protected AbstractJsonElementAssert(String actual, Class<SELF> selfType, ObjectMapper mapper)
+   protected AbstractJsonNodeAssert(String actual, Class<SELF> selfType, ObjectMapper mapper)
          throws JsonProcessingException {
       super(toJsonElement(actual, mapper), selfType);
    }
 
-   protected AbstractJsonElementAssert(JsonNode actual, Class<SELF> selfType) {
+   protected AbstractJsonNodeAssert(JsonNode actual, Class<SELF> selfType) {
       super(actual, selfType);
    }
 
@@ -208,13 +208,13 @@ public abstract class AbstractJsonElementAssert<SELF extends AbstractJsonElement
       return new BooleanAssert(value);
    }
 
-   public JsonObjectAssert asObjectNode() {
+   public ObjectNodeAssert asObjectNode() {
       isNotNull();
       ObjectNode objectNode = toObjectNode(actual);
       if (objectNode == null) {
          failWithMessage("Expected JSON node to be an object, was <%s>", actual);
       }
-      return new JsonObjectAssert(objectNode);
+      return new ObjectNodeAssert(objectNode);
    }
 
    public JsonArrayAssert asArrayNode() {
