@@ -1,4 +1,4 @@
-## Java library for asserting JSON using AssertJ and Gson
+## Java library for asserting JSON using AssertJ and Jackson
 
 Currently neither documented nor well tested.
 

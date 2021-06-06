@@ -6,7 +6,7 @@ plugins {
 
 group = 'com.ragnaroh'
 archivesBaseName = 'assertj-json'
-version = '0.4.0'
+version = '0.5.0-SNAPSHOT'
 
 task javadocJar(type: Jar) {
     classifier = 'javadoc'
@@ -39,7 +39,7 @@ uploadArchives {
                 name 'AssertJ JSON'
                 packaging 'jar'
                 artifactId 'assertj-json'
-                description 'Java library for asserting JSON using AssertJ and Gson' 
+                description 'Java library for asserting JSON using AssertJ and Jackson' 
                 url 'https://github.com/ragnaroh/assertj-json'
            
                 scm {
@@ -76,10 +76,12 @@ repositories {
 }
 
 dependencies {
-    api 'org.assertj:assertj-core:3.15.0'
-    api 'com.google.code.gson:gson:2.8.6'
-    testImplementation 'org.junit.jupiter:junit-jupiter-api:5.6.2'
-    testRuntimeOnly 'org.junit.jupiter:junit-jupiter-engine:5.6.2'
+    api 'org.assertj:assertj-core:3.19.0'
+    api 'com.fasterxml.jackson.core:jackson-core:2.12.3'
+    api 'com.fasterxml.jackson.core:jackson-databind:2.12.3'
+    api 'com.fasterxml.jackson.datatype:jackson-datatype-jsr310:2.12.3'
+    testImplementation 'org.junit.jupiter:junit-jupiter-api:5.7.2'
+    testRuntimeOnly 'org.junit.jupiter:junit-jupiter-engine:5.7.2'
 }
 
 compileJava {
@@ -87,11 +89,9 @@ compileJava {
 }
 
 compileTestJava {
-    sourceCompatibility = 13
-    options.compilerArgs.add('--enable-preview')
+    sourceCompatibility = 15
 }
 
 test {
     useJUnitPlatform()
-    jvmArgs(['--enable-preview'])
 }

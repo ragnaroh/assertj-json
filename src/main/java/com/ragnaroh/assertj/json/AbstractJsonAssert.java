@@ -8,27 +8,46 @@ import java.util.function.Function;
 
 import org.assertj.core.api.AbstractAssert;
 
-import com.google.gson.Gson;
-import com.google.gson.JsonArray;
-import com.google.gson.JsonElement;
-import com.google.gson.JsonNull;
-import com.google.gson.JsonObject;
-import com.google.gson.JsonPrimitive;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.DeserializationFeature;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.node.ArrayNode;
+import com.fasterxml.jackson.databind.node.NullNode;
+import com.fasterxml.jackson.databind.node.ObjectNode;
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 
-public abstract class AbstractJsonAssert<SELF extends AbstractJsonAssert<SELF, ACTUAL>, ACTUAL extends JsonElement>
+@SuppressWarnings({ "java:S119", "java:S2160" })
+public abstract class AbstractJsonAssert<SELF extends AbstractJsonAssert<SELF, ACTUAL>, ACTUAL extends JsonNode>
       extends AbstractAssert<SELF, ACTUAL> {
+
+   protected ObjectMapper mapper = new ObjectMapper().registerModule(new JavaTimeModule());
 
    protected AbstractJsonAssert(ACTUAL actual, Class<SELF> selfType) {
       super(actual, selfType);
    }
 
+   public SELF withObjectMapper(ObjectMapper mapper) {
+      this.mapper = mapper;
+      return myself;
+   }
+
+   public SELF withDeserializationFeature(DeserializationFeature feature, boolean state) {
+      mapper.configure(feature, state);
+      return myself;
+   }
+
    public SELF isEqualTo(String expected) {
       requireNonNull(expected);
-      JsonElement expectedJson = new Gson().fromJson(expected, JsonElement.class);
-      if (!expectedJson.equals(actual)) {
-         failWithMessage("Expected <%s> to be equal to <%s>", actual, expected);
+      try {
+         JsonNode expectedJson = mapper.readValue(expected, JsonNode.class);
+         if (!expectedJson.equals(actual)) {
+            throw failure("Expected <%s> to be equal to <%s>", actual, expected);
+         }
+         return myself;
+      } catch (JsonProcessingException e) {
+         throw new IllegalArgumentException("Could not parse expected value as JSON node");
       }
-      return myself;
    }
 
    static int[] unbox(Integer[] array) {
@@ -79,11 +98,12 @@ public abstract class AbstractJsonAssert<SELF extends AbstractJsonAssert<SELF, A
       return boxed;
    }
 
-   <T> T[] convertArray(JsonArray jsonArray, Class<T> elementType, Function<JsonElement, T> valueMapper) {
-      T[] array = (T[]) Array.newInstance(elementType, jsonArray.size());
-      for (int i = 0; i < jsonArray.size(); i++) {
-         JsonElement jsonElement = jsonArray.get(i);
-         T value = valueMapper.apply(jsonElement);
+   @SuppressWarnings("java:S1168")
+   <T> T[] convertArray(ArrayNode arrayNode, Class<T> elementType, Function<JsonNode, T> valueMapper) {
+      T[] array = (T[]) Array.newInstance(elementType, arrayNode.size());
+      for (int i = 0; i < arrayNode.size(); i++) {
+         JsonNode jsonNode = arrayNode.get(i);
+         T value = valueMapper.apply(jsonNode);
          if (value == null) {
             return null;
          }
@@ -92,97 +112,67 @@ public abstract class AbstractJsonAssert<SELF extends AbstractJsonAssert<SELF, A
       return array;
    }
 
-   static String toString(JsonElement jsonElement) {
-      if (jsonElement.isJsonPrimitive()) {
-         JsonPrimitive jsonPrimitive = jsonElement.getAsJsonPrimitive();
-         if (jsonPrimitive.isString()) {
-            return jsonPrimitive.getAsString();
-         }
+   static String toString(JsonNode jsonNode) {
+      if (jsonNode.isTextual()) {
+         return jsonNode.textValue();
       }
       return null;
    }
 
-   static Number toNumber(JsonElement jsonElement) {
-      if (jsonElement.isJsonPrimitive()) {
-         JsonPrimitive jsonPrimitive = jsonElement.getAsJsonPrimitive();
-         if (jsonPrimitive.isNumber()) {
-            return jsonPrimitive.getAsNumber();
-         }
+   static Number toNumber(JsonNode jsonNode) {
+      if (jsonNode.isNumber()) {
+         return jsonNode.numberValue();
       }
       return null;
    }
 
-   static Number toIntegralNumber(JsonElement jsonElement) {
-      if (jsonElement.isJsonPrimitive()) {
-         JsonPrimitive jsonPrimitive = jsonElement.getAsJsonPrimitive();
-         if (isIntegralNumber(jsonPrimitive)) {
-            return jsonPrimitive.getAsNumber();
-         }
+   static BigDecimal toBigDecimal(JsonNode jsonNode) {
+      if (jsonNode.isNumber()) {
+         return new BigDecimal(jsonNode.numberValue().toString());
       }
       return null;
    }
 
-   static BigDecimal toBigDecimal(JsonElement jsonElement) {
-      if (jsonElement.isJsonPrimitive()) {
-         JsonPrimitive jsonPrimitive = jsonElement.getAsJsonPrimitive();
-         if (jsonPrimitive.isNumber()) {
-            return new BigDecimal(jsonPrimitive.getAsNumber().toString());
-         }
-      }
-      return null;
-   }
-
-   static Double toDouble(JsonElement jsonElement) {
-      Number number = toNumber(jsonElement);
+   static Double toDouble(JsonNode jsonNode) {
+      Number number = toNumber(jsonNode);
       if (number != null) {
          return number.doubleValue();
       }
       return null;
    }
 
-   static Integer toInteger(JsonElement jsonElement) {
-      Number number = toIntegralNumber(jsonElement);
-      if (number != null) {
-         int value = number.intValue();
-         String valueAsString = number.toString();
-         if (valueAsString.equals(Integer.toString(value))) {
-            return value;
-         }
+   static Integer toInteger(JsonNode jsonNode) {
+      if (jsonNode.isIntegralNumber()) {
+         return jsonNode.intValue();
       }
       return null;
    }
 
-   static boolean isIntegralNumber(JsonPrimitive jsonPrimitive) {
-      return jsonPrimitive.isNumber() && jsonPrimitive.getAsString().matches("\\d+");
-   }
-
-   static Boolean toBoolean(JsonElement jsonElement) {
-      if (jsonElement.isJsonPrimitive()) {
-         JsonPrimitive jsonPrimitive = jsonElement.getAsJsonPrimitive();
-         if (jsonPrimitive.isBoolean()) {
-            return jsonPrimitive.getAsBoolean();
-         }
+   @SuppressWarnings("java:S2447")
+   static Boolean toBoolean(JsonNode jsonNode) {
+      if (jsonNode.isBoolean()) {
+         return jsonNode.booleanValue();
       }
       return null;
    }
 
-   static JsonNull toJsonNull(JsonElement jsonElement) {
-      if (jsonElement.isJsonNull()) {
-         return jsonElement.getAsJsonNull();
+   static NullNode toJsonNull(JsonNode jsonNode) {
+      if (jsonNode instanceof NullNode) {
+         return (NullNode) jsonNode;
       }
       return null;
    }
 
-   static JsonObject toJsonObject(JsonElement jsonElement) {
-      if (jsonElement.isJsonObject()) {
-         return jsonElement.getAsJsonObject();
+   static ObjectNode toObjectNode(JsonNode jsonNode) {
+      if (jsonNode instanceof ObjectNode) {
+         return (ObjectNode) jsonNode;
       }
       return null;
    }
 
-   static JsonArray toJsonArray(JsonElement jsonElement) {
-      if (jsonElement.isJsonArray()) {
-         return jsonElement.getAsJsonArray();
+   static ArrayNode toArrayNode(JsonNode jsonNode) {
+      if (jsonNode instanceof ArrayNode) {
+         return (ArrayNode) jsonNode;
       }
       return null;
    }
