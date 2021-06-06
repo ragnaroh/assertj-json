@@ -45,13 +45,13 @@ class JsonObjectAssertTest {
 
    @Test
    void stringField() throws JsonProcessingException {
-      assertThatJson(json).asJsonObject().contains("string").contains("string", "string").containsString("string");
+      assertThatJson(json).asObjectNode().contains("string").contains("string", "string").containsString("string");
    }
 
    @Test
    void intNumberField() throws JsonProcessingException {
       assertThatJson(json)
-            .asJsonObject()
+            .asObjectNode()
             .contains("intNumber")
             .contains("intNumber", 1)
             .contains("intNumber", 1.0)
@@ -67,7 +67,7 @@ class JsonObjectAssertTest {
    @Test
    void decimalNumberField() throws JsonProcessingException {
       assertThatJson(json)
-            .asJsonObject()
+            .asObjectNode()
             .contains("decimalNumber")
             .contains("decimalNumber", 0.1)
             .containsNumber("decimalNumber", "0.1")
@@ -82,7 +82,7 @@ class JsonObjectAssertTest {
    @Test
    void scientificNumberField() throws JsonProcessingException {
       assertThatJson(json)
-            .asJsonObject()
+            .asObjectNode()
             .contains("scientificNumber")
             .contains("scientificNumber", 0.1E6)
             .contains("scientificNumber", 100000.0)
@@ -97,13 +97,13 @@ class JsonObjectAssertTest {
 
    @Test
    void booleanField() throws JsonProcessingException {
-      assertThatJson(json).asJsonObject().contains("boolean").contains("boolean", true).containsBoolean("boolean");
+      assertThatJson(json).asObjectNode().contains("boolean").contains("boolean", true).containsBoolean("boolean");
    }
 
    @Test
    void emptyObjectField() throws JsonProcessingException {
       assertThatJson(json)
-            .asJsonObject()
+            .asObjectNode()
             .contains("emptyObject")
             .containsObject("emptyObject")
             .containsEmptyObject("emptyObject")
@@ -115,7 +115,7 @@ class JsonObjectAssertTest {
    @Test
    void emptyArrayField() throws JsonProcessingException {
       assertThatJson(json)
-            .asJsonObject()
+            .asObjectNode()
             .contains("emptyArray")
             .containsArray("emptyArray")
             .containsEmptyArray("emptyArray")
@@ -126,13 +126,13 @@ class JsonObjectAssertTest {
 
    @Test
    void nullField() throws JsonProcessingException {
-      assertThatJson(json).asJsonObject().contains("null").containsNull("null");
+      assertThatJson(json).asObjectNode().contains("null").containsNull("null");
    }
 
    @Test
    void objectField() throws JsonProcessingException {
       assertThatJson(json)
-            .asJsonObject()
+            .asObjectNode()
             .contains("object")
             .containsObject("object")
             .containsObjectSatisfying("object", object -> {
@@ -152,7 +152,7 @@ class JsonObjectAssertTest {
    @Test
    void stringArrayField() throws JsonProcessingException {
       assertThatJson(json)
-            .asJsonObject()
+            .asObjectNode()
             .contains("stringArray")
             .containsArray("stringArray")
             .containsStringArrayOfSize("stringArray", 3)
@@ -171,7 +171,7 @@ class JsonObjectAssertTest {
    @Test
    void intArrayField() throws JsonProcessingException {
       assertThatJson(json)
-            .asJsonObject()
+            .asObjectNode()
             .contains("intNumberArray")
             .containsArray("intNumberArray")
             .containsIntegerArrayOfSize("intNumberArray", 3)
@@ -187,7 +187,7 @@ class JsonObjectAssertTest {
    @Test
    void decimalNumberArrayField() throws JsonProcessingException {
       assertThatJson(json)
-            .asJsonObject()
+            .asObjectNode()
             .contains("decimalNumberArray")
             .containsArray("decimalNumberArray")
             .containsNumberArrayOfSize("decimalNumberArray", 3);
@@ -195,27 +195,27 @@ class JsonObjectAssertTest {
 
    @Test
    void scientificNumberArrayField() throws JsonProcessingException {
-      assertThatJson(json).asJsonObject().containsNumberArrayOfSize("scientificNumberArray", 3);
+      assertThatJson(json).asObjectNode().containsNumberArrayOfSize("scientificNumberArray", 3);
    }
 
    @Test
    void booleanArrayField() throws JsonProcessingException {
-      assertThatJson(json).asJsonObject().containsBooleanArrayOfSize("booleanArray", 3);
+      assertThatJson(json).asObjectNode().containsBooleanArrayOfSize("booleanArray", 3);
    }
 
    @Test
    void emptyObjectArrayField() throws JsonProcessingException {
-      assertThatJson(json).asJsonObject().containsObjectArrayOfSize("emptyObjectArray", 3);
+      assertThatJson(json).asObjectNode().containsObjectArrayOfSize("emptyObjectArray", 3);
    }
 
    @Test
    void emptyArrayArrayField() throws JsonProcessingException {
-      assertThatJson(json).asJsonObject().containsArrayArrayOfSize("emptyArrayArray", 3);
+      assertThatJson(json).asObjectNode().containsArrayArrayOfSize("emptyArrayArray", 3);
    }
 
    @Test
    void unassertedFields() throws JsonProcessingException {
-      var objectAssert = assertThatJson(json).asJsonObject();
+      var objectAssert = assertThatJson(json).asObjectNode();
       assertThatExceptionOfType(AssertionError.class)
             .isThrownBy(() -> objectAssert.containsNoUnassertedFields())
             .withMessage("Found additional fields: <[string, intNumber, decimalNumber, scientificNumber, boolean, emptyObject, emptyArray, null, object, stringArray, intNumberArray, decimalNumberArray, scientificNumberArray, booleanArray, emptyObjectArray, emptyArrayArray]>");

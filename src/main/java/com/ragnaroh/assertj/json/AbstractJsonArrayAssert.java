@@ -22,14 +22,14 @@ public abstract class AbstractJsonArrayAssert<SELF extends AbstractJsonArrayAsse
 
    protected AbstractJsonArrayAssert(String actual, Class<SELF> selfType, ObjectMapper mapper)
          throws JsonProcessingException {
-      this(toJsonArray(actual, mapper), selfType);
+      this(toArrayNode(actual, mapper), selfType);
    }
 
    protected AbstractJsonArrayAssert(ArrayNode actual, Class<SELF> selfType) {
       super(actual, selfType);
    }
 
-   private static ArrayNode toJsonArray(String json, ObjectMapper mapper) throws JsonProcessingException {
+   private static ArrayNode toArrayNode(String json, ObjectMapper mapper) throws JsonProcessingException {
       return mapper.readValue(json, ArrayNode.class);
    }
 
@@ -64,13 +64,13 @@ public abstract class AbstractJsonArrayAssert<SELF extends AbstractJsonArrayAsse
       return myself;
    }
 
-   public SELF containsJsonObjectsSatisfying(Consumer<ObjectNode> requirements) {
-      asJsonObjectArray().allSatisfy(requirements);
+   public SELF containsObjectNodesSatisfying(Consumer<ObjectNode> requirements) {
+      asObjectNodeArray().allSatisfy(requirements);
       return myself;
    }
 
-   public SELF containsJsonArraysSatisfying(Consumer<ArrayNode> requirements) {
-      asJsonArrayArray().allSatisfy(requirements);
+   public SELF containsArrayNodesSatisfying(Consumer<ArrayNode> requirements) {
+      asArrayNodeArray().allSatisfy(requirements);
       return myself;
    }
 
@@ -110,12 +110,12 @@ public abstract class AbstractJsonArrayAssert<SELF extends AbstractJsonArrayAsse
       return new BooleanArrayAssert(unbox(array));
    }
 
-   public ObjectArrayAssert<ObjectNode> asJsonObjectArray() {
-      return asObjectArray(ObjectNode.class, AbstractJsonAssert::toJsonObject);
+   public ObjectArrayAssert<ObjectNode> asObjectNodeArray() {
+      return asObjectArray(ObjectNode.class, AbstractJsonAssert::toObjectNode);
    }
 
-   public ObjectArrayAssert<ArrayNode> asJsonArrayArray() {
-      return asObjectArray(ArrayNode.class, AbstractJsonAssert::toJsonArray);
+   public ObjectArrayAssert<ArrayNode> asArrayNodeArray() {
+      return asObjectArray(ArrayNode.class, AbstractJsonAssert::toArrayNode);
    }
 
    private <T> ObjectArrayAssert<T> asObjectArray(Class<T> elementType, Function<JsonNode, T> valueMapper) {

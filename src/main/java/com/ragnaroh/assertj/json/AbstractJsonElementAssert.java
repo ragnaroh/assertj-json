@@ -32,75 +32,75 @@ public abstract class AbstractJsonElementAssert<SELF extends AbstractJsonElement
       return mapper.readValue(json, JsonNode.class);
    }
 
-   public SELF isAString() {
+   public SELF isString() {
       isNotNull();
       String value = toString(actual);
       if (value == null) {
-         failWithMessage("Expected JSON element to be a string, was <%s>", actual);
+         failWithMessage("Expected JSON node to be a string, was <%s>", actual);
       }
       return myself;
    }
 
-   public SELF isABigDecimal() {
+   public SELF isBigDecimal() {
       isNotNull();
       BigDecimal value = toBigDecimal(actual);
       if (value == null) {
-         failWithMessage("Expected JSON element to be a number, was <%s>", actual);
+         failWithMessage("Expected JSON node to be a number, was <%s>", actual);
       }
       return myself;
    }
 
-   public SELF isADouble() {
+   public SELF isDouble() {
       isNotNull();
       Double value = toDouble(actual);
       if (value == null) {
-         failWithMessage("Expected JSON element to be a number, was <%s>", actual);
+         failWithMessage("Expected JSON node to be a number, was <%s>", actual);
       }
       return myself;
    }
 
-   public SELF isAnInteger() {
+   public SELF isInteger() {
       isNotNull();
       Integer value = toInteger(actual);
       if (value == null) {
-         failWithMessage("Expected JSON element to be an integer, was <%s>", actual);
+         failWithMessage("Expected JSON node to be an integer, was <%s>", actual);
       }
       return myself;
    }
 
-   public SELF isABoolean() {
+   public SELF isBoolean() {
       isNotNull();
       Boolean value = toBoolean(actual);
       if (value == null) {
-         failWithMessage("Expected JSON element to be a boolean, was <%s>", actual);
+         failWithMessage("Expected JSON node to be a boolean, was <%s>", actual);
       }
       return myself;
    }
 
-   public SELF isAJsonObject() {
+   public SELF isObjectNode() {
       isNotNull();
-      ObjectNode jsonObject = toJsonObject(actual);
-      if (jsonObject == null) {
-         failWithMessage("Expected JSON element to be an object, was <%s>", actual);
+      ObjectNode objectNode = toObjectNode(actual);
+      if (objectNode == null) {
+         failWithMessage("Expected JSON node to be an object, was <%s>", actual);
       }
       return myself;
    }
 
-   public SELF isAJsonArray() {
+   public SELF isArrayNode() {
       isNotNull();
-      ArrayNode jsonArray = toJsonArray(actual);
-      if (jsonArray == null) {
-         failWithMessage("Expected JSON element to be an array, was <%s>", actual);
+      ArrayNode arrayNode = toArrayNode(actual);
+      if (arrayNode == null) {
+         failWithMessage("Expected JSON node to be an array, was <%s>", actual);
       }
       return myself;
    }
 
-   public SELF isAStringEqualTo(String expected) {
+   public SELF isStringEqualTo(String expected) {
       requireNonNull(expected);
       isNotNull();
       String value = toString(actual);
       if (value == null || !value.equals(expected)) {
-         failWithMessage("Expected JSON element to be a string equal to <%s>, was <%s>", expected, actual);
+         failWithMessage("Expected JSON node to be a string equal to <%s>, was <%s>", expected, actual);
       }
       return myself;
    }
@@ -110,55 +110,55 @@ public abstract class AbstractJsonElementAssert<SELF extends AbstractJsonElement
       isNotNull();
       Number value = toNumber(actual);
       if (value == null || !value.equals(expected)) {
-         failWithMessage("Expected JSON element to be a number equal to <%s>, was <%s>", expected, actual);
+         failWithMessage("Expected JSON node to be a number equal to <%s>, was <%s>", expected, actual);
       }
       return myself;
    }
 
-   public SELF isANumberEqualTo(BigDecimal expected) {
+   public SELF isNumberEqualTo(BigDecimal expected) {
       requireNonNull(expected);
       isNotNull();
       BigDecimal value = toBigDecimal(actual);
       if (value == null || !value.equals(expected)) {
-         failWithMessage("Expected JSON element to be a number equal to <%s>, was <%s>", expected, actual);
+         failWithMessage("Expected JSON node to be a number equal to <%s>, was <%s>", expected, actual);
       }
       return myself;
    }
 
-   public SELF isANumberEqualByComparingTo(BigDecimal expected) {
+   public SELF isNumberEqualByComparingTo(BigDecimal expected) {
       requireNonNull(expected);
       isNotNull();
       BigDecimal value = toBigDecimal(actual);
       if (value == null || value.compareTo(expected) != 0) {
-         failWithMessage("Expected JSON element to be a number equal to <%s>, was <%s>", expected, actual);
+         failWithMessage("Expected JSON node to be a number equal to <%s>, was <%s>", expected, actual);
       }
       return myself;
    }
 
-   public SELF isANumberEqualTo(double expected) {
+   public SELF isNumberEqualTo(double expected) {
       requireNonNull(expected);
       isNotNull();
       Double value = toDouble(actual);
       if (value == null || value.doubleValue() != expected) {
-         failWithMessage("Expected JSON element to be a number equal to <%s>, was <%s>", actual);
+         failWithMessage("Expected JSON node to be a number equal to <%s>, was <%s>", actual);
       }
       return myself;
    }
 
-   public SELF isAnIntegerEqualTo(int expected) {
+   public SELF isIntegerEqualTo(int expected) {
       isNotNull();
       Integer value = toInteger(actual);
       if (value == null || value.intValue() != expected) {
-         failWithMessage("Expected JSON element to be an integer equal to <%d>, was <%s>", expected, actual);
+         failWithMessage("Expected JSON node to be an integer equal to <%d>, was <%s>", expected, actual);
       }
       return myself;
    }
 
-   public SELF isABooleanEqualTo(boolean expected) {
+   public SELF isBooleanEqualTo(boolean expected) {
       isNotNull();
       Boolean value = toBoolean(actual);
       if (value == null) {
-         failWithMessage("Expected JSON element to be a boolean equal to <%s>, was <%s>", expected, actual);
+         failWithMessage("Expected JSON node to be a boolean equal to <%s>, was <%s>", expected, actual);
       }
       return myself;
    }
@@ -167,7 +167,7 @@ public abstract class AbstractJsonElementAssert<SELF extends AbstractJsonElement
       isNotNull();
       String value = toString(actual);
       if (value == null) {
-         failWithMessage("Expected JSON element to be a string, was <%s>", actual);
+         failWithMessage("Expected JSON node to be a string, was <%s>", actual);
       }
       return new StringAssert(value);
    }
@@ -176,7 +176,7 @@ public abstract class AbstractJsonElementAssert<SELF extends AbstractJsonElement
       isNotNull();
       BigDecimal value = toBigDecimal(actual);
       if (value == null) {
-         failWithMessage("Expected JSON element to be a number, was <%s>", actual);
+         failWithMessage("Expected JSON node to be a number, was <%s>", actual);
       }
       return new BigDecimalAssert(value);
    }
@@ -185,7 +185,7 @@ public abstract class AbstractJsonElementAssert<SELF extends AbstractJsonElement
       isNotNull();
       Double value = toDouble(actual);
       if (value == null) {
-         failWithMessage("Expected JSON element to be a number, was <%s>", actual);
+         failWithMessage("Expected JSON node to be a number, was <%s>", actual);
       }
       return new DoubleAssert(value);
    }
@@ -194,7 +194,7 @@ public abstract class AbstractJsonElementAssert<SELF extends AbstractJsonElement
       isNotNull();
       Integer value = toInteger(actual);
       if (value == null) {
-         failWithMessage("Expected JSON element to be an integer, was <%s>", actual);
+         failWithMessage("Expected JSON node to be an integer, was <%s>", actual);
       }
       return new IntegerAssert(value);
    }
@@ -203,27 +203,27 @@ public abstract class AbstractJsonElementAssert<SELF extends AbstractJsonElement
       isNotNull();
       Boolean value = toBoolean(actual);
       if (value == null) {
-         failWithMessage("Expected JSON element to be a boolean, was <%s>", actual);
+         failWithMessage("Expected JSON node to be a boolean, was <%s>", actual);
       }
       return new BooleanAssert(value);
    }
 
-   public JsonObjectAssert asJsonObject() {
+   public JsonObjectAssert asObjectNode() {
       isNotNull();
-      ObjectNode jsonObject = toJsonObject(actual);
-      if (jsonObject == null) {
-         failWithMessage("Expected JSON element to be an object, was <%s>", actual);
+      ObjectNode objectNode = toObjectNode(actual);
+      if (objectNode == null) {
+         failWithMessage("Expected JSON node to be an object, was <%s>", actual);
       }
-      return new JsonObjectAssert(jsonObject);
+      return new JsonObjectAssert(objectNode);
    }
 
-   public JsonArrayAssert asJsonArray() {
+   public JsonArrayAssert asArrayNode() {
       isNotNull();
-      ArrayNode jsonArray = toJsonArray(actual);
-      if (jsonArray == null) {
-         failWithMessage("Expected JSON element to be an array, was <%s>", actual);
+      ArrayNode arrayNode = toArrayNode(actual);
+      if (arrayNode == null) {
+         failWithMessage("Expected JSON node to be an array, was <%s>", actual);
       }
-      return new JsonArrayAssert(jsonArray);
+      return new JsonArrayAssert(arrayNode);
    }
 
 }

@@ -79,11 +79,11 @@ public abstract class AbstractJsonAssert<SELF extends AbstractJsonAssert<SELF, A
       return boxed;
    }
 
-   <T> T[] convertArray(ArrayNode jsonArray, Class<T> elementType, Function<JsonNode, T> valueMapper) {
-      T[] array = (T[]) Array.newInstance(elementType, jsonArray.size());
-      for (int i = 0; i < jsonArray.size(); i++) {
-         JsonNode jsonElement = jsonArray.get(i);
-         T value = valueMapper.apply(jsonElement);
+   <T> T[] convertArray(ArrayNode arrayNode, Class<T> elementType, Function<JsonNode, T> valueMapper) {
+      T[] array = (T[]) Array.newInstance(elementType, arrayNode.size());
+      for (int i = 0; i < arrayNode.size(); i++) {
+         JsonNode jsonNode = arrayNode.get(i);
+         T value = valueMapper.apply(jsonNode);
          if (value == null) {
             return null;
          }
@@ -92,70 +92,70 @@ public abstract class AbstractJsonAssert<SELF extends AbstractJsonAssert<SELF, A
       return array;
    }
 
-   static String toString(JsonNode jsonElement) {
-      if (jsonElement.isTextual()) {
-         return jsonElement.textValue();
+   static String toString(JsonNode jsonNode) {
+      if (jsonNode.isTextual()) {
+         return jsonNode.textValue();
       }
       return null;
    }
 
-   static Number toNumber(JsonNode jsonElement) {
-      if (jsonElement.isNumber()) {
-         return jsonElement.numberValue();
+   static Number toNumber(JsonNode jsonNode) {
+      if (jsonNode.isNumber()) {
+         return jsonNode.numberValue();
       }
       return null;
    }
 
-   static Number toIntegralNumber(JsonNode jsonElement) {
-      return toInteger(jsonElement);
+   static Number toIntegralNumber(JsonNode jsonNode) {
+      return toInteger(jsonNode);
    }
 
-   static BigDecimal toBigDecimal(JsonNode jsonElement) {
-      if (jsonElement.isBigDecimal()) {
-         return jsonElement.decimalValue();
+   static BigDecimal toBigDecimal(JsonNode jsonNode) {
+      if (jsonNode.isBigDecimal()) {
+         return jsonNode.decimalValue();
       }
       return null;
    }
 
-   static Double toDouble(JsonNode jsonElement) {
-      Number number = toNumber(jsonElement);
+   static Double toDouble(JsonNode jsonNode) {
+      Number number = toNumber(jsonNode);
       if (number != null) {
          return number.doubleValue();
       }
       return null;
    }
 
-   static Integer toInteger(JsonNode jsonElement) {
-      if (jsonElement.isIntegralNumber()) {
-         return jsonElement.intValue();
+   static Integer toInteger(JsonNode jsonNode) {
+      if (jsonNode.isIntegralNumber()) {
+         return jsonNode.intValue();
       }
       return null;
    }
 
-   static Boolean toBoolean(JsonNode jsonElement) {
-      if (jsonElement.isBoolean()) {
-         return jsonElement.booleanValue();
+   static Boolean toBoolean(JsonNode jsonNode) {
+      if (jsonNode.isBoolean()) {
+         return jsonNode.booleanValue();
       }
       return null;
    }
 
-   static NullNode toJsonNull(JsonNode jsonElement) {
-      if (jsonElement instanceof NullNode) {
-         return (NullNode) jsonElement;
+   static NullNode toJsonNull(JsonNode jsonNode) {
+      if (jsonNode instanceof NullNode) {
+         return (NullNode) jsonNode;
       }
       return null;
    }
 
-   static ObjectNode toJsonObject(JsonNode jsonElement) {
-      if (jsonElement instanceof ObjectNode) {
-         return (ObjectNode) jsonElement;
+   static ObjectNode toObjectNode(JsonNode jsonNode) {
+      if (jsonNode instanceof ObjectNode) {
+         return (ObjectNode) jsonNode;
       }
       return null;
    }
 
-   static ArrayNode toJsonArray(JsonNode jsonElement) {
-      if (jsonElement instanceof ArrayNode) {
-         return (ArrayNode) jsonElement;
+   static ArrayNode toArrayNode(JsonNode jsonNode) {
+      if (jsonNode instanceof ArrayNode) {
+         return (ArrayNode) jsonNode;
       }
       return null;
    }
