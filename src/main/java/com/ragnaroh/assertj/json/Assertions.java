@@ -15,16 +15,16 @@ public class Assertions extends org.assertj.core.api.Assertions {
       return new ObjectNodeAssert(actual);
    }
 
-   public static JsonArrayAssert assertThatJsonArray(String actual) {
-      return new JsonArrayAssert(actual);
+   public static ArrayNodeAssert assertThatJsonArray(String actual) {
+      return new ArrayNodeAssert(actual);
    }
 
    public static ObjectNodeAssert assertThat(ObjectNode actual) {
       return new ObjectNodeAssert(actual);
    }
 
-   public static JsonArrayAssert assertThat(ArrayNode actual) {
-      return new JsonArrayAssert(actual);
+   public static ArrayNodeAssert assertThat(ArrayNode actual) {
+      return new ArrayNodeAssert(actual);
    }
 
    public static JsonNodeAssert assertThat(JsonNode actual) {

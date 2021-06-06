@@ -192,13 +192,13 @@ public abstract class AbstractJsonNodeAssert<SELF extends AbstractJsonNodeAssert
       return new ObjectNodeAssert(objectNode).withObjectMapper(mapper);
    }
 
-   public JsonArrayAssert asArrayNode() {
+   public ArrayNodeAssert asArrayNode() {
       isNotNull();
       ArrayNode arrayNode = toArrayNode(actual);
       if (arrayNode == null) {
          failWithMessage("Expected JSON node to be an array, was <%s>", actual);
       }
-      return new JsonArrayAssert(arrayNode).withObjectMapper(mapper);
+      return new ArrayNodeAssert(arrayNode).withObjectMapper(mapper);
    }
 
 }
