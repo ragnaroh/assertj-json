@@ -135,12 +135,6 @@ public abstract class AbstractJsonArrayAssert<SELF extends AbstractJsonArrayAsse
       return myself;
    }
 
-   public SELF containsExactly(Number... expected) {
-      requireNonNull(expected);
-      containsExactly(expected, AbstractJsonAssert::toNumber);
-      return myself;
-   }
-
    public SELF containsExactly(int... expected) {
       requireNonNull(expected);
       containsExactly(box(expected), AbstractJsonAssert::toInteger);

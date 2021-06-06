@@ -6,8 +6,8 @@ import java.math.BigDecimal;
 import java.time.DateTimeException;
 import java.time.LocalDateTime;
 import java.util.HashSet;
+import java.util.LinkedHashSet;
 import java.util.Set;
-import java.util.TreeSet;
 import java.util.function.Consumer;
 import java.util.function.Function;
 
@@ -427,7 +427,7 @@ public abstract class AbstractJsonObjectAssert<SELF extends AbstractJsonObjectAs
     * Verifies that all fields have been asserted (by any of the "contains*" methods).
     */
    public void containsNoUnassertedFields() {
-      Set<String> actualFields = new TreeSet<>(actual.keySet());
+      Set<String> actualFields = new LinkedHashSet<>(actual.keySet());
       actualFields.removeAll(assertedFields);
       if (!actualFields.isEmpty()) {
          failWithMessage("Found additional fields: <%s>", actualFields);
